@@ -348,7 +348,7 @@ export default function ChatPage() {
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex ${message.role === "user" ? "justify-start" : "justify-end"} chat-bubble-in`}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} chat-bubble-in`}
               >
                 <div
                   className={`max-w-[80%] rounded-lg p-4 ${
@@ -392,7 +392,7 @@ export default function ChatPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="flex justify-end pr-4"
+                className="flex justify-start pl-4"
               >
                 {/* --- Thinking Animation Structure --- */}
                 <div className="bg-gray-800/90 backdrop-blur-sm border border-gray-700 rounded-lg p-4">
