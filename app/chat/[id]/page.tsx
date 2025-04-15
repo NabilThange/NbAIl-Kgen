@@ -27,6 +27,7 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false)
   const [isMicActive, setIsMicActive] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   const [chat, setChat] = useState<Chat | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -175,27 +176,25 @@ export default function ChatPage() {
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" }); // Groq supports webm
-        // Optionally, create a File object if needed by the API
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" });
 
         setIsRecording(false);
-        setIsMicActive(false); // Update visual state
-        setInput("Transcribing..."); // Give user feedback
+        setIsMicActive(false);
+        setIsTranscribing(true);
 
         try {
           const transcribedText = await getGroqTranscription(audioFile);
           if (transcribedText && !transcribedText.startsWith("Sorry")) {
             setInput(transcribedText);
-            // Optional: Automatically submit after transcription?
-            // Or let user review and press send?
-            // For now, just populate the input.
           } else {
             setInput("Transcription failed. Please try again.");
           }
         } catch (error) {
           console.error("Transcription API call failed:", error);
           setInput("Transcription failed. Please try again.");
+        } finally {
+          setIsTranscribing(false);
         }
 
         // Clean up the stream tracks
@@ -456,10 +455,15 @@ export default function ChatPage() {
               <div className="flex-1 px-2">
                 <Input
                   type="text"
-                  placeholder="Ask anything to NbAIl..."
+                  placeholder={
+                    isRecording ? "🎤 NbAIl is listening to you..." :
+                    isTranscribing ? "🧠 Transcribing your thoughts..." :
+                    "Ask anything to NbAIl..."
+                  }
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   className="bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder-gray-400"
+                  disabled={isTranscribing || isRecording}
                 />
               </div>
 
@@ -470,20 +474,27 @@ export default function ChatPage() {
                     <TooltipTrigger asChild>
                       <button
                         type="button"
-                        className={`p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800/50 transition-all duration-200 hover:scale-105 active:scale-95 ${isRecording ? 'bg-red-500/30' : ''}`}
+                        className={`p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800/50 transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center ${isRecording ? 'bg-red-500/30' : ''} ${isTranscribing ? 'cursor-not-allowed' : ''}`}
                         onMouseDown={handleMicMouseDown}
                         onMouseUp={handleMicMouseUp}
                         onTouchStart={handleMicMouseDown}
                         onTouchEnd={handleMicMouseUp}
+                        disabled={isTranscribing}
                       >
-                        <Mic className={`h-5 w-5 ${isMicActive ? "text-purple-500 animate-pulse" : ""} ${isRecording ? "text-red-500" : ""}`} />
-                        {isMicActive && !isRecording && (
-                          <span className="absolute -inset-1 rounded-full animate-ping bg-purple-500/20"></span>
+                        {isTranscribing ? (
+                          <div className="loader"></div>
+                        ) : (
+                          <>
+                            <Mic className={`h-5 w-5 ${isMicActive ? "text-purple-500 animate-pulse" : ""} ${isRecording ? "text-red-500" : ""}`} />
+                            {isMicActive && !isRecording && (
+                              <span className="absolute -inset-1 rounded-full animate-ping bg-purple-500/20"></span>
+                            )}
+                          </>
                         )}
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p>Speak</p>
+                      <p>{isRecording ? "Stop Recording" : isTranscribing ? "Transcribing..." : "Hold to Speak"}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
