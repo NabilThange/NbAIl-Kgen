@@ -348,12 +348,12 @@ export default function ChatPage() {
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} chat-bubble-in`}
+                className={`flex ${message.role === "user" ? "justify-start" : "justify-end"} chat-bubble-in`}
               >
                 <div
                   className={`max-w-[80%] rounded-lg p-4 ${
                     message.role === "user"
-                      ? "bg-purple-600 text-white"
+                      ? "bg-gray-700/80 text-white"
                       : "bg-gray-800/90 backdrop-blur-sm border border-gray-700 text-white"
                   }`}
                 >
@@ -384,31 +384,28 @@ export default function ChatPage() {
             ))
           )}
 
-          {/* Typing indicator */}
+          {/* Typing indicator -> Replaced with Thinking Animation */} 
           <AnimatePresence>
             {isTyping && (
               <motion.div
+                key="thinking-indicator"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="flex justify-start"
+                className="flex justify-end pr-4"
               >
-                <div className="bg-gray-800/90 backdrop-blur-sm border border-gray-700 rounded-lg p-4 text-white">
-                  <div className="flex space-x-2">
-                    <div
-                      className="w-2 h-2 rounded-full bg-purple-500 animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 rounded-full bg-purple-500 animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 rounded-full bg-purple-500 animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    ></div>
+                {/* --- Thinking Animation Structure --- */}
+                <div className="bg-gray-800/90 backdrop-blur-sm border border-gray-700 rounded-lg p-4">
+                  <div className="thinking-wrapper">
+                    <div className="circle"></div>
+                    <div className="circle"></div>
+                    <div className="circle"></div>
+                    <div className="shadow"></div>
+                    <div className="shadow"></div>
+                    <div className="shadow"></div>
                   </div>
                 </div>
+                {/* --- End Thinking Animation --- */}
               </motion.div>
             )}
           </AnimatePresence>

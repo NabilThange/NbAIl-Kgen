@@ -311,3 +311,91 @@ a:active {
   }
 }
 /* End Loader Styles */
+
+/* AI Thinking Animation - From Uiverse.io by mobinkakei */
+.thinking-wrapper {
+  width: 80px; /* Adjusted size */
+  height: 40px; /* Adjusted size */
+  position: relative;
+  z-index: 1;
+  /* margin: auto; */ /* Removed margin */
+}
+
+.thinking-wrapper .circle {
+  width: 10px; /* Adjusted size */
+  height: 10px; /* Adjusted size */
+  position: absolute;
+  border-radius: 50%;
+  background-color: #a855f7cc; /* Purple theme */
+  left: 15%;
+  transform-origin: 50%;
+  animation: circle7124 0.5s alternate infinite ease;
+}
+
+@keyframes circle7124 {
+  0% {
+    top: 24px; /* Adjusted position */
+    height: 5px;
+    border-radius: 50px 50px 25px 25px;
+    transform: scaleX(1.7);
+  }
+  40% {
+    height: 10px; /* Adjusted size */
+    border-radius: 50%;
+    transform: scaleX(1);
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+.thinking-wrapper .circle:nth-child(2) {
+  left: 45%;
+  animation-delay: 0.2s;
+}
+
+.thinking-wrapper .circle:nth-child(3) {
+  left: auto;
+  right: 15%;
+  animation-delay: 0.3s;
+}
+
+.thinking-wrapper .shadow {
+  width: 10px; /* Adjusted size */
+  height: 4px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5); /* Adjusted shadow color */
+  position: absolute;
+  top: 30px; /* Adjusted position */
+  transform-origin: 50%;
+  z-index: -1;
+  left: 15%;
+  filter: blur(1px);
+  animation: shadow046 0.5s alternate infinite ease;
+}
+
+@keyframes shadow046 {
+  0% {
+    transform: scaleX(1.5);
+  }
+  40% {
+    transform: scaleX(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scaleX(0.2);
+    opacity: 0.4;
+  }
+}
+
+.thinking-wrapper .shadow:nth-child(4) {
+  left: 45%;
+  animation-delay: 0.2s;
+}
+
+.thinking-wrapper .shadow:nth-child(5) {
+  left: auto;
+  right: 15%;
+  animation-delay: 0.3s;
+}
+/* End AI Thinking Animation */
