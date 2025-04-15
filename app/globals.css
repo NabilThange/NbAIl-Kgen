@@ -624,3 +624,44 @@ a:active {
   height: 220px;
   opacity: 1;
 }
+
+/* Arrow Button Style (From Uiverse.io by reshades) */
+.arrow-button {
+  background-color: #ffffff00;
+  color: #fff;
+  width: 8.5em; /* Keep original size for now */
+  height: 2.9em; /* Keep original size for now */
+  border: #8b5cf6 0.2em solid; /* Changed border color */
+  border-radius: 11px;
+  text-align: right;
+  transition: all 0.6s ease;
+  display: flex; /* Added for alignment */
+  align-items: center; /* Added for alignment */
+  justify-content: center; /* Added for alignment */
+  position: relative; /* Added for SVG positioning */
+}
+
+.arrow-button:hover {
+  background-color: #8b5cf6; /* Changed hover background */
+  cursor: pointer;
+}
+
+.arrow-button svg {
+  width: 1.6em;
+  height: 1.6em; /* Added height */
+  position: absolute; /* Use absolute for precise positioning */
+  left: 0.8em; /* Position from left */
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%); /* Fine-tune vertical center */
+  transition: all 0.6s ease;
+}
+
+.arrow-button:hover svg {
+  transform: translate(5px, -50%); /* Adjust transform for vertical centering */
+}
+
+.arrow-button .text {
+  margin: 0 auto 0 calc(1.6em + 1.2em); /* Adjust margin for SVG space */
+  display: inline-block; /* Ensure text is block for margin */
+  text-align: center; /* Center text */
+}
