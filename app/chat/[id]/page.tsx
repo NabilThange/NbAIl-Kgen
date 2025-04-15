@@ -7,13 +7,13 @@ import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Glasses, Mic, Paperclip, X, ArrowUp, Plus, Monitor, AudioWaveform } from "lucide-react"
+import { Glasses, Mic, Paperclip, X, ArrowUp, Plus, Monitor, AudioWaveform, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { SparklesCore } from "@/components/sparkles"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { chatService } from "@/lib/chat-service"
 import type { Chat, Message, Attachment } from "@/types/chat"
-import { getGroqChatCompletion, getGroqTranscription } from "@/lib/groq-service"
+import { getGroqChatCompletion, getGroqTranscription, getGroqVisionCompletion } from "@/lib/groq-service"
 
 export default function ChatPage() {
   const params = useParams()
@@ -30,10 +30,13 @@ export default function ChatPage() {
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [chat, setChat] = useState<Chat | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [imageBase64, setImageBase64] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Mock files for the picker
   const mockFiles = [
@@ -80,14 +83,25 @@ export default function ChatPage() {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() && !selectedFile) return
+    if (!input.trim() && !selectedFile && !selectedImageFile) return
 
-    // Prepare attachment if any
+    // Determine user content (text or image prompt)
+    const userTextContent = input || (selectedFile ? `I'm sending you this file: ${selectedFile}` : 
+                           selectedImageFile ? `I've uploaded an image. ${input || 'What do you see?'}` : "")
+
+    // Prepare attachment if any (for non-image files)
     let attachment: Attachment | undefined
     if (selectedFile) {
       attachment = {
         type: "file",
         name: selectedFile,
+      }
+    } else if (selectedImageFile && imageBase64) {
+      // Create a temporary attachment representation for the UI
+      attachment = {
+        type: "image",
+        name: selectedImageFile.name,
+        url: imageBase64, // Use base64 for preview in UI
       }
     }
 
@@ -96,49 +110,65 @@ export default function ChatPage() {
       id: `temp-${Date.now()}`,
       chat_id: chatId,
       role: "user",
-      content: input || (selectedFile ? `I'm sending you this file: ${selectedFile}` : ""),
+      content: userTextContent,
       created_at: new Date().toISOString(),
       attachment_type: attachment?.type,
       attachment_name: attachment?.name,
-      attachment_url: attachment?.url,
+      attachment_url: attachment?.url, // Will show base64 preview for image
     }
 
     setMessages((prev) => [...prev, tempUserMessage])
+    const currentInput = input
+    const currentImageBase64 = imageBase64
+    const currentImageFile = selectedImageFile
     setInput("")
     setSelectedFile(null)
+    setImageBase64(null) // Clear image state
+    setSelectedImageFile(null) // Clear image state
 
-    // Save user message to database
+    // Save user message to database (handle potential image attachment)
+    // Note: chatService.addMessage might need adjustment if you want to persist image data/urls differently
     const savedUserMessage = await chatService.addMessage(
       chatId,
       "user",
-      input || (selectedFile ? `I'm sending you this file: ${selectedFile}` : ""),
-      attachment,
+      userTextContent,
+      attachment, // Passing the UI attachment representation
     )
 
     // Indicate assistant is thinking
     setIsTyping(true)
 
     try {
-      // Get assistant response from Groq
-      const assistantResponse = await getGroqChatCompletion(input || (selectedFile ? `Analyzing file: ${selectedFile}` : ""));
+      let assistantResponse = ""
+      // --- Check if it's an image submission ---
+      if (currentImageFile && currentImageBase64) {
+        assistantResponse = await getGroqVisionCompletion(
+          currentInput || "Describe this image.", // Use input or default prompt
+          currentImageBase64,
+          currentImageFile.type
+        )
+      } else {
+      // --- Otherwise, use standard chat completion ---
+        assistantResponse = await getGroqChatCompletion(currentInput || (selectedFile ? `Analyzing file: ${selectedFile}` : ""))
+      }
+      // ------------------------------------------
 
       // Save assistant message to database
-      const savedAssistantMessage = await chatService.addMessage(chatId, "assistant", assistantResponse, undefined);
+      const savedAssistantMessage = await chatService.addMessage(chatId, "assistant", assistantResponse, undefined)
 
       if (savedAssistantMessage) {
         setMessages((prev) => [
           ...prev.filter((m) => m.id !== tempUserMessage.id), // Remove temp message
           savedUserMessage || tempUserMessage, // Use saved message or fallback to temp
           savedAssistantMessage,
-        ]);
+        ])
       } else {
         // Handle error if assistant message couldn't be saved
-        console.error("Failed to save assistant message.");
-        // Potentially revert the user message or show an error message
-        setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
+        console.error("Failed to save assistant message.")
+        setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id))
       }
     } catch (error) {
-      console.error("Error getting or saving assistant response:", error);
+      console.error("Error getting or saving assistant response:", error)
       // Show error message to the user
       const errorAssistantMessage: Message = {
         id: `temp-error-${Date.now()}`,
@@ -146,79 +176,127 @@ export default function ChatPage() {
         role: "assistant",
         content: "Sorry, I encountered an error trying to respond.",
         created_at: new Date().toISOString(),
-      };
+      }
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== tempUserMessage.id),
         savedUserMessage || tempUserMessage,
         errorAssistantMessage,
-      ]);
+      ])
     } finally {
-      setIsTyping(false);
+      setIsTyping(false)
     }
   }
 
   // --- Add Audio Recording Logic --- 
   const handleMicMouseDown = async () => {
     if (isRecording || typeof navigator === 'undefined' || !navigator.mediaDevices) {
-      console.warn("Media devices not available or already recording.");
-      return;
+      console.warn("Media devices not available or already recording.")
+      return
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = []; // Reset chunks
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      mediaRecorderRef.current = new MediaRecorder(stream)
+      audioChunksRef.current = [] // Reset chunks
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
+          audioChunksRef.current.push(event.data)
         }
-      };
+      }
 
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" });
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" })
 
-        setIsRecording(false);
-        setIsMicActive(false);
-        setIsTranscribing(true);
+        setIsRecording(false)
+        setIsMicActive(false)
+        setIsTranscribing(true)
 
         try {
-          const transcribedText = await getGroqTranscription(audioFile);
+          const transcribedText = await getGroqTranscription(audioFile)
           if (transcribedText && !transcribedText.startsWith("Sorry")) {
-            setInput(transcribedText);
+            setInput(transcribedText)
           } else {
-            setInput("Transcription failed. Please try again.");
+            setInput("Transcription failed. Please try again.")
           }
         } catch (error) {
-          console.error("Transcription API call failed:", error);
-          setInput("Transcription failed. Please try again.");
+          console.error("Transcription API call failed:", error)
+          setInput("Transcription failed. Please try again.")
         } finally {
-          setIsTranscribing(false);
+          setIsTranscribing(false)
         }
 
         // Clean up the stream tracks
-        stream.getTracks().forEach(track => track.stop());
-      };
+        stream.getTracks().forEach(track => track.stop())
+      }
 
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-      setIsMicActive(true); // Update visual state
+      mediaRecorderRef.current.start()
+      setIsRecording(true)
+      setIsMicActive(true) // Update visual state
     } catch (error) {
-      console.error("Error accessing microphone:", error);
-      alert("Could not access microphone. Please check permissions.");
-      setIsMicActive(false);
-      setIsRecording(false);
+      console.error("Error accessing microphone:", error)
+      alert("Could not access microphone. Please check permissions.")
+      setIsMicActive(false)
+      setIsRecording(false)
     }
-  };
+  }
 
   const handleMicMouseUp = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stop()
       // onstop event handles the rest
     }
-  };
+  }
   // ----------------------------------
+
+  // --- Add File Handling Logic ---
+  const handleFileButtonClick = () => {
+    // Trigger the hidden file input
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Basic validation (type and size)
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"]
+    const maxSize = 4 * 1024 * 1024 // 4MB limit (adjust as needed based on API)
+
+    if (!allowedTypes.includes(file.type)) {
+      alert("Invalid file type. Please select a PNG, JPG, or JPEG image.")
+      return
+    }
+
+    if (file.size > maxSize) {
+      alert(`File is too large. Maximum size is ${maxSize / 1024 / 1024}MB.`)
+      return
+    }
+
+    // Read file as Base64
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImageBase64(reader.result as string)
+      setSelectedImageFile(file)
+    }
+    reader.onerror = (error) => {
+      console.error("Error reading file:", error)
+      alert("Failed to read file.")
+      setImageBase64(null)
+      setSelectedImageFile(null)
+    }
+    reader.readAsDataURL(file)
+
+    // Reset file input value to allow selecting the same file again
+    event.target.value = ""
+  }
+
+  const handleRemoveImage = () => {
+    setImageBase64(null)
+    setSelectedImageFile(null)
+  }
+  // -----------------------------
 
   // If still loading or no chat is found, show loading
   if (isLoading) {
@@ -393,8 +471,29 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Input area */}
+      {/* Input area & Image Preview */} 
       <div className="border-t border-gray-800 p-4 relative z-10">
+        {/* Image Preview Section */} 
+        {imageBase64 && (
+          <div className="max-w-3xl mx-auto mb-2">
+            <div className="relative inline-block bg-gray-800/80 backdrop-blur-md border border-gray-700 rounded-lg p-1">
+              <img 
+                src={imageBase64} 
+                alt="Selected preview" 
+                className="h-16 w-auto max-w-xs rounded object-contain"
+              />
+              <button 
+                onClick={handleRemoveImage} 
+                className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow"
+                aria-label="Remove image"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        )}
+        {/* End Image Preview Section */} 
+
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit} className="relative">
             {/* Main input container - ChatGPT style rounded pill */}
@@ -407,13 +506,13 @@ export default function ChatPage() {
                       <button
                         type="button"
                         className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800/50 transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsFilePickerOpen(!isFilePickerOpen)}
+                        onClick={handleFileButtonClick}
                       >
                         <Plus className="h-5 w-5" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p>Add File</p>
+                      <p>Add Image</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -527,6 +626,15 @@ export default function ChatPage() {
                 </TooltipProvider>
               </div>
             </div>
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/png, image/jpeg, image/jpg"
+              style={{ display: "none" }}
+            />
           </form>
         </div>
       </div>

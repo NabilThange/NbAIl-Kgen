@@ -98,4 +98,44 @@ export const getGroqTranscription = async (audioFile: File) => {
     console.error("Error getting Groq transcription:", error);
     return "Sorry, there was an error transcribing the audio.";
   }
+};
+
+export const getGroqVisionCompletion = async (userPrompt: string, imageBase64: string, imageType: string) => {
+  // Ensure the base64 string has the correct prefix (e.g., data:image/jpeg;base64,)
+  // The FileReader already provides this, but double-check or construct if needed.
+  const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:${imageType};base64,${imageBase64}`;
+
+  try {
+    console.log("Sending to Groq Vision..."); // Debug log
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: userPrompt,
+            },
+            {
+              type: "image_url",
+              image_url: {
+                "url": imageUrl,
+              },
+            },
+          ],
+        },
+      ],
+      model: "llama-3.2-11b-vision-preview", // Use a vision model
+      max_tokens: 1024, // Example limit, adjust as needed
+    });
+    console.log("Received from Groq Vision:", chatCompletion.choices[0]?.message?.content);
+    return chatCompletion.choices[0]?.message?.content || "Sorry, I could not process the image.";
+  } catch (error) {
+    console.error("Error getting Groq vision completion:", error);
+    // Check for specific error types if needed (e.g., size limits)
+    if (error instanceof Error && error.message.includes('413')) {
+        return "Sorry, the uploaded image is too large.";
+    }
+    return "Sorry, there was an error processing the image.";
+  }
 }; 
