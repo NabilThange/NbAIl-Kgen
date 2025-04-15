@@ -403,9 +403,10 @@ a:active {
 /* Starburst Button Styles (From Uiverse.io by MuhammadHasann) */
 .starburst-button {
   position: relative;
-  padding: 10px 32px; /* Adjusted padding */
+  padding: 0 32px; /* Adjusted padding */
+  height: 44px; /* Explicit height */
   background: #9333ea; /* Use theme purple */
-  font-size: 17px;
+  font-size: 16px; /* Adjusted font size */
   font-weight: 500;
   color: #ffffff; /* White text */
   border: 3px solid #9333ea; /* Use theme purple */
@@ -629,16 +630,19 @@ a:active {
 .arrow-button {
   background-color: #ffffff00;
   color: #fff;
-  width: 8.5em; /* Keep original size for now */
-  height: 2.9em; /* Keep original size for now */
-  border: #8b5cf6 0.2em solid; /* Changed border color */
-  border-radius: 11px;
-  text-align: right;
+  width: auto; /* Let padding determine width */
+  height: 44px; /* Explicit height */
+  padding: 0 32px; /* Adjusted padding */
+  border: #8b5cf6 2px solid; /* Adjusted border thickness */
+  border-radius: 8px; /* Match starburst radius */
   transition: all 0.6s ease;
-  display: flex; /* Added for alignment */
-  align-items: center; /* Added for alignment */
-  justify-content: center; /* Added for alignment */
-  position: relative; /* Added for SVG positioning */
+  display: inline-flex; /* Use inline-flex */
+  align-items: center; /* Center items vertically */
+  justify-content: center; /* Center items horizontally */
+  gap: 8px; /* Add gap between icon and text */
+  position: relative; /* Keep relative for potential pseudo-elements if needed */
+  font-size: 16px; /* Match font size */
+  font-weight: 500; /* Match font weight */
 }
 
 .arrow-button:hover {
@@ -647,21 +651,21 @@ a:active {
 }
 
 .arrow-button svg {
-  width: 1.6em;
-  height: 1.6em; /* Added height */
-  position: absolute; /* Use absolute for precise positioning */
-  left: 0.8em; /* Position from left */
-  top: 50%; /* Center vertically */
-  transform: translateY(-50%); /* Fine-tune vertical center */
+  width: 1.2em; /* Adjusted icon size */
+  height: 1.2em; /* Adjusted icon size */
+  position: static; /* Remove absolute positioning */
+  transform: none; /* Remove transform */
   transition: all 0.6s ease;
+  order: 1; /* SVG comes first */
 }
 
 .arrow-button:hover svg {
-  transform: translate(5px, -50%); /* Adjust transform for vertical centering */
+  transform: translateX(5px); /* Keep hover effect */
 }
 
 .arrow-button .text {
-  margin: 0 auto 0 calc(1.6em + 1.2em); /* Adjust margin for SVG space */
-  display: inline-block; /* Ensure text is block for margin */
-  text-align: center; /* Center text */
+  margin: 0; /* Remove specific margin */
+  display: inline-block;
+  text-align: center;
+  order: 2; /* Text comes second */
 }
