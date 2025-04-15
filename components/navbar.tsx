@@ -43,7 +43,7 @@ export default function Navbar() {
               animate={{ y: 0 }}
               exit={{ y: "-100%" }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="fixed top-0 backdrop-blur-md bg-black/30 rounded-md shadow-lg z-40 md:hidden mt-16 mx-2"
+              className="fixed top-0 left-2 right-2 backdrop-blur-md bg-black/30 rounded-md shadow-lg z-40 md:hidden mt-16"
             >
               <div className="px-4 py-4 space-y-2 text-center">
                 <MobileNavLink href="/features">Features</MobileNavLink>
