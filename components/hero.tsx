@@ -4,8 +4,32 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, Brain, Sparkles } from "lucide-react"
+import { useState, useEffect } from "react"
+
+interface ParticleStyle {
+  width: number
+  height: number
+  left: string
+  top: string
+  duration: number
+  delay: number
+}
 
 export default function Hero() {
+  const [particleStyles, setParticleStyles] = useState<ParticleStyle[]>([])
+
+  useEffect(() => {
+    const styles = Array.from({ length: 20 }).map(() => ({
+      width: Math.random() * 40 + 10,
+      height: Math.random() * 40 + 10,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      duration: Math.random() * 5 + 5,
+      delay: Math.random() * 5,
+    }))
+    setParticleStyles(styles)
+  }, []) // Empty dependency array ensures this runs only once on mount
+
   return (
     <div className="relative pt-36 pb-32 md:pt-52 md:pb-44">
       {/* Background gradient */}
@@ -14,25 +38,25 @@ export default function Hero() {
       {/* Animated particles */}
       <div className="absolute inset-0">
         <div className="absolute inset-0">
-          {Array.from({ length: 20 }).map((_, i) => (
+          {particleStyles.map((style, i) => (
             <motion.div
               key={i}
               className="absolute rounded-full bg-purple-500/20"
               style={{
-                width: Math.random() * 40 + 10,
-                height: Math.random() * 40 + 10,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
+                width: style.width,
+                height: style.height,
+                left: style.left,
+                top: style.top,
               }}
               animate={{
                 y: [0, -30, 0],
                 opacity: [0.1, 0.3, 0.1],
               }}
               transition={{
-                duration: Math.random() * 5 + 5,
+                duration: style.duration,
                 repeat: Number.POSITIVE_INFINITY,
                 ease: "easeInOut",
-                delay: Math.random() * 5,
+                delay: style.delay,
               }}
             />
           ))}

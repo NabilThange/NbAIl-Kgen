@@ -28,6 +28,9 @@
   --input: 0 0% 14.9%;
   --ring: 265 89% 50%;
 
+  /* Add radius variable */
+  --radius: 0.5rem;
+
   /* Gradient colors */
   --gradient-start: 265 89% 50%;
   --gradient-end: 330 100% 65%;

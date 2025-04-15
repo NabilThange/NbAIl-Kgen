@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -10,12 +10,17 @@ const inter = Inter({ subsets: ["latin"], display: "swap" })
 export const metadata: Metadata = {
   title: "NbAIl – Your Multimodal AI Assistant",
   description: "NbAIl is your intelligent partner that understands voice, screen, documents, and more.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
-  themeColor: "#9333ea", // Purple theme color
   icons: {
     icon: "/favicon.ico",
   },
     generator: 'v0.dev'
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#9333ea", // Purple theme color
 }
 
 export default function RootLayout({
@@ -34,6 +39,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
-import './globals.css'
