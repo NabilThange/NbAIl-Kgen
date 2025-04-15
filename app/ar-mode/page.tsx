@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Glasses, Check } from "lucide-react"
-import { SimplifiedHeader } from "@/components/simplified-header"
+import MinimalHeader from "@/components/minimal-header"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 // Dynamically import components
@@ -45,7 +45,7 @@ export default function ARModePage() {
         />
       </div>
 
-      <SimplifiedHeader title="AR Mode" icon={<Glasses className="h-6 w-6" />} />
+      <MinimalHeader title="AR Mode" />
 
       <main className="flex-1 pt-16 relative z-10">
         <div className="container mx-auto px-4 py-12 max-w-4xl">

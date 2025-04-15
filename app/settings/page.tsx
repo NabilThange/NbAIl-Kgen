@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Settings, User, Bell, Shield, Moon, Sun, Globe } from "lucide-react"
-import { SimplifiedHeader } from "@/components/simplified-header"
+import MinimalHeader from "@/components/minimal-header"
 import dynamic from "next/dynamic"
 
 // Dynamically import components
@@ -50,7 +50,7 @@ export default function SettingsPage() {
         />
       </div>
 
-      <SimplifiedHeader title="Settings" icon={<Settings className="h-6 w-6" />} />
+      <MinimalHeader title="Settings" />
 
       <main className="flex-1 pt-16 relative z-10">
         <div className="container mx-auto px-4 py-12 max-w-6xl">

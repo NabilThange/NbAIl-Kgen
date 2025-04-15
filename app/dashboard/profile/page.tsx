@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Mail, Lock, Bell, Shield, Upload, Save, Trash2 } from "lucide-react"
 import { SparklesCore } from "@/components/sparkles"
+import MinimalHeader from "@/components/minimal-header"
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -44,12 +45,9 @@ export default function ProfilePage() {
         />
       </div>
 
-      <div className="p-6 md:p-8 relative z-10">
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">Profile</h1>
-          <p className="text-gray-400 mt-1">Manage your account settings and preferences</p>
-        </div>
+      <MinimalHeader title="Profile" />
 
+      <div className="p-6 md:p-8 relative z-10 pt-0">
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="bg-gray-800/50 backdrop-blur-sm">
             <TabsTrigger value="profile" className="data-[state=active]:bg-purple-600">

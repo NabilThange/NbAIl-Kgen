@@ -5,8 +5,9 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Brain, Monitor, ArrowLeft, Check, Shield, ArrowUpRight } from "lucide-react"
+import { Monitor, Check, Shield } from "lucide-react"
 import { SparklesCore } from "@/components/sparkles"
+import MinimalHeader from "@/components/minimal-header"
 
 export default function ScreenAwarePage() {
   const [enabled, setEnabled] = useState(false)
@@ -32,32 +33,7 @@ export default function ScreenAwarePage() {
         />
       </div>
 
-      <header className="border-b border-gray-800 glass fixed top-0 left-0 right-0 z-10">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center">
-            <Link href="/chat" className="text-gray-400 hover:text-white mr-4 flex items-center">
-              <ArrowLeft className="h-5 w-5" />
-              <span className="sr-only md:not-sr-only md:inline-block md:ml-2">Back to Assistant</span>
-            </Link>
-            <div className="flex items-center">
-              <Monitor className="h-6 w-6 text-purple-500 mr-2" />
-              <h1 className="text-white font-medium text-lg">ScreenAware</h1>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white" asChild>
-              <Link href="/chat">
-                Go to Assistant
-                <ArrowUpRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Link href="/" className="flex items-center space-x-2">
-              <Brain className="h-6 w-6 text-purple-500" />
-              <span className="text-white font-bold">NbAIl</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <MinimalHeader title="ScreenAware" />
 
       <main className="flex-1 pt-16 relative z-10">
         <div className="container mx-auto px-4 py-12 max-w-4xl">
