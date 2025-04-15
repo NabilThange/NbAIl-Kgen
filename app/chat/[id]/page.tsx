@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Glasses, Mic, Paperclip, X, ArrowUp, Plus, Monitor } from "lucide-react"
+import { Glasses, Mic, Paperclip, X, ArrowUp, Plus, Monitor, AudioWaveform } from "lucide-react"
 import Link from "next/link"
 import { SparklesCore } from "@/components/sparkles"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -479,26 +479,7 @@ export default function ChatPage() {
                           <ArrowUp className="h-5 w-5" />
                         ) : (
                           <div className="flex items-center justify-center h-5 w-5">
-                            <span
-                              className="block w-0.5 h-2 bg-white rounded-full mx-0.5 animate-waveform"
-                              style={{ animationDelay: "0ms" }}
-                            ></span>
-                            <span
-                              className="block w-0.5 h-3 bg-white rounded-full mx-0.5 animate-waveform"
-                              style={{ animationDelay: "100ms" }}
-                            ></span>
-                            <span
-                              className="block w-0.5 h-4 bg-white rounded-full mx-0.5 animate-waveform"
-                              style={{ animationDelay: "200ms" }}
-                            ></span>
-                            <span
-                              className="block w-0.5 h-3 bg-white rounded-full mx-0.5 animate-waveform"
-                              style={{ animationDelay: "300ms" }}
-                            ></span>
-                            <span
-                              className="block w-0.5 h-2 bg-white rounded-full mx-0.5 animate-waveform"
-                              style={{ animationDelay: "400ms" }}
-                            ></span>
+                            <AudioWaveform className="h-5 w-5" />
                           </div>
                         )}
                       </button>
