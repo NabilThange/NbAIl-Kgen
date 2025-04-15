@@ -13,7 +13,7 @@ import { SparklesCore } from "@/components/sparkles"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { chatService } from "@/lib/chat-service"
 import type { Chat, Message, Attachment } from "@/types/chat"
-import { getGroqChatCompletion } from "@/lib/groq-service"
+import { getGroqChatCompletion, getGroqTranscription } from "@/lib/groq-service"
 
 export default function ChatPage() {
   const params = useParams()
@@ -26,10 +26,13 @@ export default function ChatPage() {
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [isMicActive, setIsMicActive] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
   const [chat, setChat] = useState<Chat | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
   // Mock files for the picker
   const mockFiles = [
@@ -127,6 +130,9 @@ export default function ChatPage() {
           savedUserMessage || tempUserMessage, // Use saved message or fallback to temp
           savedAssistantMessage,
         ]);
+        // --- Speak the response --- 
+        speakText(assistantResponse);
+        // -------------------------
       } else {
         // Handle error if assistant message couldn't be saved
         console.error("Failed to save assistant message.");
@@ -153,45 +159,87 @@ export default function ChatPage() {
     }
   }
 
-  // Handle microphone activation
-  useEffect(() => {
-    let timer: NodeJS.Timeout
-    if (isMicActive) {
-      timer = setTimeout(async () => {
-        setIsMicActive(false)
-        // Simulate receiving a voice message
-        const userMessage = await chatService.addMessage(
-          chatId,
-          "user",
-          "Can you explain how AR Mode works?",
-          undefined,
-        )
+  // --- Text-to-Speech Function ---
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Optional: Cancel any previous speech before starting new
+      window.speechSynthesis.cancel();
 
-        if (userMessage) {
-          setMessages((prev) => [...prev, userMessage])
+      const utterance = new SpeechSynthesisUtterance(text);
+      // Optional: Configure voice, rate, pitch etc.
+      // const voices = window.speechSynthesis.getVoices();
+      // utterance.voice = voices.find(voice => voice.name === 'Google UK English Female'); // Example
+      // utterance.rate = 1; // From 0.1 to 10
+      // utterance.pitch = 1; // From 0 to 2
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      console.warn("Browser does not support Speech Synthesis.");
+    }
+  };
+  // ------------------------------
+
+  // --- Add Audio Recording Logic --- 
+  const handleMicMouseDown = async () => {
+    if (isRecording) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = []; // Reset chunks
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" }); // Groq supports webm
+        // Optionally, create a File object if needed by the API
+        const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" });
+
+        setIsRecording(false);
+        setIsMicActive(false); // Update visual state
+        setInput("Transcribing..."); // Give user feedback
+
+        try {
+          const transcribedText = await getGroqTranscription(audioFile);
+          if (transcribedText && !transcribedText.startsWith("Sorry")) {
+            setInput(transcribedText);
+            // Optional: Automatically submit after transcription?
+            // Or let user review and press send?
+            // For now, just populate the input.
+          } else {
+            setInput("Transcription failed. Please try again.");
+          }
+        } catch (error) {
+          console.error("Transcription API call failed:", error);
+          setInput("Transcription failed. Please try again.");
         }
 
-        // Simulate assistant typing
-        setIsTyping(true)
-        setTimeout(async () => {
-          const assistantMessage = await chatService.addMessage(
-            chatId,
-            "assistant",
-            "AR Mode allows me to overlay helpful information in your field of view. You can enable it by clicking the AR Mode button in the chat interface. It uses your device's camera to understand your environment and provide contextual assistance.",
-            undefined,
-          )
+        // Clean up the stream tracks
+        stream.getTracks().forEach(track => track.stop());
+      };
 
-          if (assistantMessage) {
-            setMessages((prev) => [...prev, assistantMessage])
-          }
-
-          setIsTyping(false)
-        }, 2000)
-      }, 3000)
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setIsMicActive(true); // Update visual state
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      alert("Could not access microphone. Please check permissions.");
+      setIsMicActive(false);
+      setIsRecording(false);
     }
+  };
 
-    return () => clearTimeout(timer)
-  }, [isMicActive, chatId])
+  const handleMicMouseUp = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      // onstop event handles the rest
+    }
+  };
+  // ----------------------------------
 
   // If still loading or no chat is found, show loading
   if (isLoading) {
@@ -442,11 +490,14 @@ export default function ChatPage() {
                     <TooltipTrigger asChild>
                       <button
                         type="button"
-                        className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800/50 transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMicActive(!isMicActive)}
+                        className={`p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800/50 transition-all duration-200 hover:scale-105 active:scale-95 ${isRecording ? 'bg-red-500/30' : ''}`}
+                        onMouseDown={handleMicMouseDown}
+                        onMouseUp={handleMicMouseUp}
+                        onTouchStart={handleMicMouseDown}
+                        onTouchEnd={handleMicMouseUp}
                       >
-                        <Mic className={`h-5 w-5 ${isMicActive ? "text-purple-500" : ""}`} />
-                        {isMicActive && (
+                        <Mic className={`h-5 w-5 ${isMicActive ? "text-purple-500 animate-pulse" : ""} ${isRecording ? "text-red-500" : ""}`} />
+                        {isMicActive && !isRecording && (
                           <span className="absolute -inset-1 rounded-full animate-ping bg-purple-500/20"></span>
                         )}
                       </button>

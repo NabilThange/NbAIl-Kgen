@@ -20,4 +20,18 @@ export const getGroqChatCompletion = async (userMessage: string) => {
     console.error('Error getting Groq chat completion:', error);
     return 'Sorry, there was an error processing your request.';
   }
+};
+
+export const getGroqTranscription = async (audioFile: File) => {
+  try {
+    const transcription = await groq.audio.transcriptions.create({
+      file: audioFile,
+      model: "whisper-large-v3", // Or your preferred model
+      response_format: "json", // Get transcription text
+    });
+    return transcription.text || ""; // Return the transcribed text
+  } catch (error) {
+    console.error("Error getting Groq transcription:", error);
+    return "Sorry, there was an error transcribing the audio.";
+  }
 }; 
