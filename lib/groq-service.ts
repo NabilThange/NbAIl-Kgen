@@ -125,7 +125,7 @@ export const getGroqVisionCompletion = async (userPrompt: string, imageBase64: s
           ],
         },
       ],
-      model: "llama-3.2-11b-vision-preview", // Use a vision model
+      model: "meta-llama/llama-4-scout-17b-16e-instruct", // Use the specified Llama 4 Scout vision model
       max_tokens: 1024, // Example limit, adjust as needed
     });
     console.log("Received from Groq Vision:", chatCompletion.choices[0]?.message?.content);
