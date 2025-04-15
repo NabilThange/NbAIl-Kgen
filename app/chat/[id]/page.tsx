@@ -158,7 +158,10 @@ export default function ChatPage() {
 
   // --- Add Audio Recording Logic --- 
   const handleMicMouseDown = async () => {
-    if (isRecording) return;
+    if (isRecording || typeof navigator === 'undefined' || !navigator.mediaDevices) {
+      console.warn("Media devices not available or already recording.");
+      return;
+    }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
