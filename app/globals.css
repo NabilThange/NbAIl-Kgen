@@ -405,6 +405,7 @@ a:active {
   position: relative;
   padding: 0 32px; /* Adjusted padding */
   height: 44px; /* Explicit height */
+  min-width: 9.5em; /* Added min-width */
   background: #9333ea; /* Use theme purple */
   font-size: 16px; /* Adjusted font size */
   font-weight: 500;
@@ -631,6 +632,7 @@ a:active {
   background-color: #ffffff00;
   color: #fff;
   width: auto; /* Let padding determine width */
+  min-width: 9.5em; /* Added min-width */
   height: 44px; /* Explicit height */
   padding: 0 32px; /* Adjusted padding */
   border: #8b5cf6 2px solid; /* Adjusted border thickness */
