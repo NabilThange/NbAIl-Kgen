@@ -399,3 +399,139 @@ a:active {
   animation-delay: 0.3s;
 }
 /* End AI Thinking Animation */
+
+/* Starburst Button Styles (From Uiverse.io by MuhammadHasann) */
+.starburst-button {
+  position: relative;
+  padding: 12px 35px;
+  background: #9333ea; /* Use theme purple */
+  font-size: 17px;
+  font-weight: 500;
+  color: #ffffff; /* White text */
+  border: 3px solid #9333ea; /* Use theme purple */
+  border-radius: 8px;
+  box-shadow: 0 0 0 #a855f78c; /* Lighter purple shadow */
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+  overflow: hidden; /* Prevent stars peeking out */
+}
+
+.starburst-button .star-1,
+.starburst-button .star-2,
+.starburst-button .star-3,
+.starburst-button .star-4,
+.starburst-button .star-5,
+.starburst-button .star-6 {
+  position: absolute;
+  filter: drop-shadow(0 0 0 #ffffff); /* White stars */
+  z-index: -5;
+  transition: all 1s cubic-bezier(0.05, 0.83, 0.43, 0.96);
+}
+
+.starburst-button .star-1 {
+  top: 20%;
+  left: 20%;
+  width: 25px;
+  height: auto;
+}
+
+.starburst-button .star-2 {
+  top: 45%;
+  left: 45%;
+  width: 15px;
+  height: auto;
+  transition-delay: 0.1s;
+}
+
+.starburst-button .star-3 {
+  top: 40%;
+  left: 40%;
+  width: 5px;
+  height: auto;
+  transition-delay: 0.2s;
+}
+
+.starburst-button .star-4 {
+  top: 20%;
+  left: 40%;
+  width: 8px;
+  height: auto;
+  transition-delay: 0.3s;
+}
+
+.starburst-button .star-5 {
+  top: 25%;
+  left: 45%;
+  width: 15px;
+  height: auto;
+  transition-delay: 0.4s;
+}
+
+.starburst-button .star-6 {
+  top: 5%;
+  left: 50%;
+  width: 5px;
+  height: auto;
+  transition-delay: 0.5s;
+}
+
+.starburst-button:hover {
+  background: transparent;
+  color: #a855f7; /* Lighter theme purple for text */
+  border-color: #a855f7; /* Lighter theme purple for border */
+  box-shadow: 0 0 25px #a855f78c;
+}
+
+.starburst-button:hover .star-1 {
+  top: -80%;
+  left: -30%;
+  width: 25px;
+  filter: drop-shadow(0 0 10px #ffffff);
+  z-index: 2;
+}
+
+.starburst-button:hover .star-2 {
+  top: -25%;
+  left: 10%;
+  width: 15px;
+  filter: drop-shadow(0 0 10px #ffffff);
+  z-index: 2;
+}
+
+.starburst-button:hover .star-3 {
+  top: 55%;
+  left: 25%;
+  width: 5px;
+  filter: drop-shadow(0 0 10px #ffffff);
+  z-index: 2;
+}
+
+.starburst-button:hover .star-4 {
+  top: 30%;
+  left: 80%;
+  width: 8px;
+  filter: drop-shadow(0 0 10px #ffffff);
+  z-index: 2;
+}
+
+.starburst-button:hover .star-5 {
+  top: 25%;
+  left: 115%;
+  width: 15px;
+  filter: drop-shadow(0 0 10px #ffffff);
+  z-index: 2;
+}
+
+.starburst-button:hover .star-6 {
+  top: 5%;
+  left: 60%;
+  width: 5px;
+  filter: drop-shadow(0 0 10px #ffffff);
+  z-index: 2;
+}
+
+.starburst-button .fil0 {
+  fill: #ffffff; /* White stars */
+}
+
+/* End Starburst Button Styles */
