@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import Link from "next/link"
 import { Brain } from "lucide-react"
 import { SparklesCore } from "@/components/sparkles"
@@ -9,7 +7,7 @@ import AuthForm from "@/components/auth-form"
 
 export default function SignupPage() {
   return (
-    <div className="min-h-screen bg-black/[0.96] antialiased bg-grid-white/[0.02] flex flex-col items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
       {/* Interactive background with moving particles */}
       <div className="h-full w-full absolute inset-0 z-0">
         <SparklesCore
@@ -23,12 +21,14 @@ export default function SignupPage() {
         />
       </div>
 
+      {/* Logo link */}
       <Link href="/" className="absolute top-8 left-8 flex items-center space-x-2 z-10">
         <Brain className="h-8 w-8 text-purple-500" />
         <span className="text-white font-bold text-xl">NbAIl</span>
       </Link>
 
-      <AuthForm initialState="signup" />
+      {/* Render the AuthForm component with signup mode */}
+      <AuthForm initialMode="signup" />
     </div>
   )
 }

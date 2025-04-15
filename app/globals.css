@@ -636,9 +636,9 @@ a:active {
   height: 44px; /* Explicit height */
   padding: 0 22px; /* Reduced padding */
   border: #8b5cf6 2px solid; /* Adjusted border thickness */
-  border-radius: 8px; /* Match starburst radius */
+  border-radius: 8px; /* Match starburst radius *
   transition: all 0.6s ease;
-  display: inline-flex; /* Use inline-flex */
+  display: inline-flex; /* Use inline-flex 
   align-items: center; /* Center items vertically */
   justify-content: center; /* Center items horizontally */
   gap: 8px; /* Add gap between icon and text */
@@ -712,19 +712,21 @@ a:active {
   stroke-dashoffset: -32.42;
 }
 
-/* From Uiverse.io by andrew-demchenk0 - Adapted for NbAIl Theme */
-
-/* Main wrapper for positioning the switch and card */
-.auth-form-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 50px; /* Adjust as needed for vertical positioning */
+/* From Uiverse.io by andrew-demchenk0 */ 
+.wrapper {
+  --input-focus: #2d8cf0;
+  --font-color: #fefefe;
+  --font-color-sub: #7e7e7e;
+  --bg-color: #111;
+  --bg-color-alt: #7e7e7e;
+  --main-color: #fefefe;
+    /* display: flex; */ /* Using tailwind flex on the component instead */
+    /* flex-direction: column; */
+    /* align-items: center; */
 }
-
 /* switch card */
-.auth-switch {
-  /* Removed transform: translateY(-200px); Adjust positioning with wrapper margin */
+.switch {
+  /* transform: translateY(-200px); */ /* Handled by wrapper padding-top */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -733,199 +735,178 @@ a:active {
   gap: 30px;
   width: 50px;
   height: 20px;
-  margin-bottom: 20px; /* Space between switch and card */
 }
 
-.auth-card-side::before {
+.card-side::before {
   position: absolute;
   content: 'Log in';
-  /* Adjusted positioning */
-  right: 100%;
-  margin-right: 15px;
+  left: -70px;
   top: 0;
-  width: auto; /* Let text size determine width */
-  white-space: nowrap;
-  /* text-decoration: underline; */ /* Controlled by toggle */
-  color: hsl(var(--foreground));
+  width: 100px;
+  text-decoration: underline;
+  color: var(--font-color);
   font-weight: 600;
 }
 
-.auth-card-side::after {
+.card-side::after {
   position: absolute;
   content: 'Sign up';
-  /* Adjusted positioning */
-  left: 100%;
-  margin-left: 15px;
+  left: 70px;
   top: 0;
-  width: auto; /* Let text size determine width */
-  white-space: nowrap;
-  /* text-decoration: none; */ /* Controlled by toggle */
-  color: hsl(var(--foreground));
+  width: 100px;
+  text-decoration: none;
+  color: var(--font-color);
   font-weight: 600;
 }
 
-.auth-toggle {
+.toggle {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.auth-slider {
+.slider {
   box-sizing: border-box;
   border-radius: 5px;
-  border: 2px solid hsl(var(--foreground)); /* Use foreground for border */
-  box-shadow: 4px 4px hsl(var(--foreground)); /* Use foreground for shadow */
+  border: 2px solid var(--main-color);
+  box-shadow: 4px 4px var(--main-color);
   position: absolute;
   cursor: pointer;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: hsl(var(--card)); /* Use card bg */
+  background-color: var(--bg-color);
   transition: 0.3s;
 }
 
-.auth-slider:before {
+.slider:before {
   box-sizing: border-box;
   position: absolute;
   content: "";
   height: 20px;
   width: 20px;
-  border: 2px solid hsl(var(--foreground));
+  border: 2px solid var(--main-color);
   border-radius: 5px;
   left: -2px;
   bottom: 2px;
-  background-color: hsl(var(--foreground)); /* Slider knob color */
-  box-shadow: 0 3px 0 hsl(var(--muted-foreground)); /* Subtle shadow */
+  background-color: var(--bg-color);
+  box-shadow: 0 3px 0 var(--main-color);
   transition: 0.3s;
 }
 
-/* Checked state */
-.auth-toggle:checked + .auth-slider {
-  background-color: hsl(var(--primary)); /* Use primary color when checked */
+.toggle:checked + .slider {
+  background-color: var(--input-focus);
 }
 
-.auth-toggle:checked + .auth-slider:before {
+.toggle:checked + .slider:before {
   transform: translateX(30px);
-  background-color: hsl(var(--primary-foreground)); /* Change knob color when active */
 }
 
-.auth-toggle ~ .auth-card-side::before {
-  text-decoration: underline; /* Login underlined by default */
-}
-.auth-toggle ~ .auth-card-side::after {
-  text-decoration: none; /* Signup not underlined by default */
+.toggle:checked ~ .card-side:before {
+  text-decoration: none;
 }
 
-.auth-toggle:checked ~ .auth-card-side::before {
-  text-decoration: none; /* Login not underlined when signup selected */
+.toggle:checked ~ .card-side:after {
+  text-decoration: underline;
 }
 
-.auth-toggle:checked ~ .auth-card-side::after {
-  text-decoration: underline; /* Signup underlined when selected */
-}
+/* card */ 
 
-/* Flip card */
-.auth-flip-card__inner {
+.flip-card__inner {
   width: 300px;
   height: 350px;
   position: relative;
   background-color: transparent;
   perspective: 1000px;
+    /* width: 100%;
+    height: 100%; */
   text-align: center;
   transition: transform 0.8s;
   transform-style: preserve-3d;
 }
 
-.auth-toggle:checked ~ .auth-flip-card__inner {
+.toggle:checked ~ .flip-card__inner {
   transform: rotateY(180deg);
 }
 
-.auth-toggle:checked ~ .auth-flip-card__front {
+.toggle:checked ~ .flip-card__front {
   box-shadow: none;
 }
 
-.auth-flip-card__front,
-.auth-flip-card__back {
+.flip-card__front, .flip-card__back {
   padding: 20px;
   position: absolute;
-  width: 100%; /* Ensure sides take full width */
-  height: 100%; /* Ensure sides take full height */
   display: flex;
   flex-direction: column;
   justify-content: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  background: hsl(var(--card)); /* Use card bg */
+  background: var(--bg-color);
   gap: 20px;
   border-radius: 5px;
-  border: 2px solid hsl(var(--foreground)); /* Use foreground */
-  box-shadow: 4px 4px hsl(var(--foreground)); /* Use foreground */
+  border: 2px solid var(--main-color);
+  box-shadow: 4px 4px var(--main-color);
 }
 
-.auth-flip-card__back {
+.flip-card__back {
+  width: 100%;
   transform: rotateY(180deg);
 }
 
-.auth-flip-card__form {
+.flip-card__form {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
 }
 
-.auth-title {
+.title {
   margin: 20px 0 20px 0;
   font-size: 25px;
   font-weight: 900;
   text-align: center;
-  color: hsl(var(--foreground)); /* Use foreground */
+  color: var(--main-color);
 }
 
-.auth-flip-card__input {
+.flip-card__input {
   width: 250px;
   height: 40px;
   border-radius: 5px;
-  border: 2px solid hsl(var(--foreground)); /* Use foreground */
-  background-color: hsl(var(--background)); /* Use main background */
-  box-shadow: 4px 4px hsl(var(--foreground)); /* Use foreground */
+  border: 2px solid var(--main-color);
+  background-color: var(--bg-color);
+  box-shadow: 4px 4px var(--main-color);
   font-size: 15px;
   font-weight: 600;
-  color: hsl(var(--foreground)); /* Use foreground */
+  color: var(--font-color);
   padding: 5px 10px;
   outline: none;
 }
 
-.auth-flip-card__input::placeholder {
-  color: hsl(var(--muted-foreground)); /* Use muted foreground */
+.flip-card__input::placeholder {
+  color: var(--font-color-sub);
   opacity: 0.8;
 }
 
-.auth-flip-card__input:focus {
-  border: 2px solid hsl(var(--primary)); /* Use primary for focus */
+.flip-card__input:focus {
+  border: 2px solid var(--input-focus);
 }
 
-.auth-flip-card__btn:active {
-  box-shadow: 0px 0px hsl(var(--foreground));
+.flip-card__btn:active, .button-confirm:active {
+  box-shadow: 0px 0px var(--main-color);
   transform: translate(3px, 3px);
 }
 
-.auth-flip-card__btn {
+.flip-card__btn {
   margin: 20px 0 20px 0;
   width: 120px;
   height: 40px;
   border-radius: 5px;
-  border: 2px solid hsl(var(--primary)); /* Use primary */
-  background-color: hsl(var(--primary)); /* Use primary */
-  box-shadow: 4px 4px hsl(var(--primary)); /* Use primary */
+  border: 2px solid var(--main-color);
+  background-color: var(--bg-color);
+  box-shadow: 4px 4px var(--main-color);
   font-size: 17px;
   font-weight: 600;
-  color: hsl(var(--primary-foreground)); /* Use primary foreground */
+  color: var(--font-color);
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
-}
-
-.auth-flip-card__btn:hover {
-    background-color: hsl(var(--background)); /* Use background on hover */
-    color: hsl(var(--primary)); /* Use primary text on hover */
 }

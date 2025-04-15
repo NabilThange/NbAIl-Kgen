@@ -1,119 +1,122 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 interface AuthFormProps {
-  initialState?: "login" | "signup"
+  initialMode?: "login" | "signup"
 }
 
-export default function AuthForm({ initialState = "login" }: AuthFormProps) {
-  const [isSignUp, setIsSignUp] = useState(initialState === "signup")
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+export default function AuthForm({ initialMode = "login" }: AuthFormProps) {
+  const [isSignUp, setIsSignUp] = useState(initialMode === "signup")
+  const [loginEmail, setLoginEmail] = useState("")
+  const [loginPassword, setLoginPassword] = useState("")
+  const [signupName, setSignupName] = useState("")
+  const [signupEmail, setSignupEmail] = useState("")
+  const [signupPassword, setSignupPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleToggle = () => {
-    setIsSignUp(!isSignUp)
-  }
+  // Ensure the checkbox reflects the initialMode prop
+  useEffect(() => {
+    setIsSignUp(initialMode === "signup")
+  }, [initialMode])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-
-    const action = isSignUp ? "Sign Up" : "Log In"
-    console.log(`${action} attempt with:`, { name: isSignUp ? name : undefined, email, password })
-
+    console.log("Login attempt:", { email: loginEmail, password: loginPassword })
     // Simulate API call
     setTimeout(() => {
-      console.log(`${action} successful (simulated)`)
       setIsLoading(false)
-      // Redirect to chat after successful login/signup
+      router.push("/chat")
+    }, 1500)
+  }
+
+  const handleSignupSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    console.log("Signup attempt:", { name: signupName, email: signupEmail, password: signupPassword })
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false)
+      // Navigate to chat page after simulated signup
       router.push("/chat")
     }, 1500)
   }
 
   return (
-    <div className="auth-form-wrapper">
+    <div className="wrapper flex justify-center pt-[200px]"> {/* Added flex/justify-center and padding-top */} 
       <div className="card-switch">
-        <label className="auth-switch">
+        <label className="switch">
           <input
-            className="auth-toggle"
+            className="toggle"
             type="checkbox"
             checked={isSignUp}
-            onChange={handleToggle}
+            onChange={() => setIsSignUp(!isSignUp)}
           />
-          <span className="auth-slider"></span>
-          <span className="auth-card-side"></span>
-          <div className="auth-flip-card__inner">
-            {/* Login Form */}
-            <div className="auth-flip-card__front">
-              <div className="auth-title">Log in</div>
-              <form onSubmit={handleSubmit} className="auth-flip-card__form">
+          <span className="slider"></span>
+          <span className="card-side"></span>
+          <div className="flip-card__inner">
+            <div className="flip-card__front">
+              <div className="title">Log in</div>
+              <form onSubmit={handleLoginSubmit} className="flip-card__form">
                 <input
                   type="email"
                   placeholder="Email"
                   name="email"
-                  className="auth-flip-card__input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  className="flip-card__input"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
                   required
-                  disabled={isLoading}
                 />
                 <input
                   type="password"
                   placeholder="Password"
                   name="password"
-                  className="auth-flip-card__input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  className="flip-card__input"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
                   required
-                  disabled={isLoading}
                 />
-                <button className="auth-flip-card__btn" type="submit" disabled={isLoading}>
-                  {isLoading && !isSignUp ? "Logging in..." : "Let's go!"}
+                <button className="flip-card__btn" type="submit" disabled={isLoading}>
+                  {isLoading && !isSignUp ? "Loading..." : "Let`s go!"}
                 </button>
               </form>
             </div>
-            {/* Sign Up Form */}
-            <div className="auth-flip-card__back">
-              <div className="auth-title">Sign up</div>
-              <form onSubmit={handleSubmit} className="auth-flip-card__form">
+            <div className="flip-card__back">
+              <div className="title">Sign up</div>
+              <form onSubmit={handleSignupSubmit} className="flip-card__form">
                 <input
-                  type="text" // Changed from 'name' which is not a valid type
+                  type="text" // Changed type to text for name
                   placeholder="Name"
-                  name="name" // Keep name attribute for potential server use
-                  className="auth-flip-card__input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  name="name" // Added name attribute
+                  className="flip-card__input"
+                  value={signupName}
+                  onChange={(e) => setSignupName(e.target.value)}
                   required
-                  disabled={isLoading}
                 />
                 <input
                   type="email"
                   placeholder="Email"
                   name="email"
-                  className="auth-flip-card__input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  className="flip-card__input"
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
                   required
-                  disabled={isLoading}
                 />
                 <input
                   type="password"
                   placeholder="Password"
                   name="password"
-                  className="auth-flip-card__input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  className="flip-card__input"
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
                   required
-                  disabled={isLoading}
                 />
-                <button className="auth-flip-card__btn" type="submit" disabled={isLoading}>
-                  {isLoading && isSignUp ? "Signing up..." : "Confirm!"}
+                <button className="flip-card__btn" type="submit" disabled={isLoading}>
+                  {isLoading && isSignUp ? "Loading..." : "Confirm!"}
                 </button>
               </form>
             </div>
