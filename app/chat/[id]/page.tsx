@@ -13,6 +13,7 @@ import { SparklesCore } from "@/components/sparkles"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { chatService } from "@/lib/chat-service"
 import type { Chat, Message, Attachment } from "@/types/chat"
+import { getGroqChatCompletion } from "@/lib/groq-service"
 
 export default function ChatPage() {
   const params = useParams()
@@ -110,52 +111,45 @@ export default function ChatPage() {
       attachment,
     )
 
-    // Simulate assistant typing
+    // Indicate assistant is thinking
     setIsTyping(true)
 
-    // Simulate assistant response after a delay
-    setTimeout(async () => {
-      const assistantResponse = getAssistantResponse(input, attachment)
+    try {
+      // Get assistant response from Groq
+      const assistantResponse = await getGroqChatCompletion(input || (selectedFile ? `Analyzing file: ${selectedFile}` : ""));
 
       // Save assistant message to database
-      const savedAssistantMessage = await chatService.addMessage(chatId, "assistant", assistantResponse, undefined)
+      const savedAssistantMessage = await chatService.addMessage(chatId, "assistant", assistantResponse, undefined);
 
       if (savedAssistantMessage) {
         setMessages((prev) => [
           ...prev.filter((m) => m.id !== tempUserMessage.id), // Remove temp message
           savedUserMessage || tempUserMessage, // Use saved message or fallback to temp
           savedAssistantMessage,
-        ])
+        ]);
+      } else {
+        // Handle error if assistant message couldn't be saved
+        console.error("Failed to save assistant message.");
+        // Potentially revert the user message or show an error message
+        setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
       }
-
-      setIsTyping(false)
-    }, 1500)
-  }
-
-  // Generate assistant response
-  const getAssistantResponse = (userInput: string, attachment?: Attachment): string => {
-    if (attachment) {
-      if (attachment.type === "file") {
-        return `I've received your file "${attachment.name}". I'll analyze its contents and provide insights shortly. Is there anything specific you'd like to know about this file?`
-      } else if (attachment.type === "image") {
-        return "I can see the image you've shared. It appears to be a diagram or chart. Would you like me to analyze its contents or explain what I'm seeing?"
-      }
-    }
-
-    const input = userInput.toLowerCase()
-
-    if (input.includes("hello") || input.includes("hi")) {
-      return "Hello there! How can I assist you today?"
-    } else if (input.includes("help")) {
-      return "I'm here to help! I can answer questions, analyze documents, understand your screen, and much more. What would you like to know?"
-    } else if (input.includes("ar mode") || input.includes("augmented reality")) {
-      return "AR Mode allows me to overlay helpful information in your field of view. You can enable it by clicking the AR Mode button in the chat interface."
-    } else if (input.includes("screen") || input.includes("screenaware")) {
-      return "ScreenAware lets me see and understand what's on your screen to provide contextual assistance. Enable it by clicking the ScreenAware button."
-    } else if (input.includes("feature") || input.includes("can you")) {
-      return "I have several capabilities including voice interaction, screen awareness, document understanding, AR mode, and chat memory. What would you like to try?"
-    } else {
-      return "I understand your message. As a multimodal AI assistant, I can help with various tasks. Would you like to try using my screen awareness or AR features?"
+    } catch (error) {
+      console.error("Error getting or saving assistant response:", error);
+      // Show error message to the user
+      const errorAssistantMessage: Message = {
+        id: `temp-error-${Date.now()}`,
+        chat_id: chatId,
+        role: "assistant",
+        content: "Sorry, I encountered an error trying to respond.",
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [
+        ...prev.filter((m) => m.id !== tempUserMessage.id),
+        savedUserMessage || tempUserMessage,
+        errorAssistantMessage,
+      ]);
+    } finally {
+      setIsTyping(false);
     }
   }
 
