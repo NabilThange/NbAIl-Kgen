@@ -24,7 +24,6 @@ export const SparklesCore = ({
 }: SparklesProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const mousePosition = useMousePosition()
-  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 })
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -32,11 +31,6 @@ export const SparklesCore = ({
     // Detect if we're on a mobile device and reduce particles for better performance
     const isMobile = window.innerWidth < 768
     const actualParticleDensity = isMobile ? Math.floor(particleDensity / 2) : particleDensity
-
-    setDimensions({
-      width: window.innerWidth,
-      height: window.innerHeight,
-    })
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -123,10 +117,6 @@ export const SparklesCore = ({
 
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
-      setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
       init()
     }
 
@@ -145,8 +135,6 @@ export const SparklesCore = ({
       className={className}
       style={{
         background,
-        width: dimensions.width,
-        height: dimensions.height,
       }}
     />
   )
