@@ -130,9 +130,6 @@ export default function ChatPage() {
           savedUserMessage || tempUserMessage, // Use saved message or fallback to temp
           savedAssistantMessage,
         ]);
-        // --- Speak the response --- 
-        speakText(assistantResponse);
-        // -------------------------
       } else {
         // Handle error if assistant message couldn't be saved
         console.error("Failed to save assistant message.");
@@ -158,26 +155,6 @@ export default function ChatPage() {
       setIsTyping(false);
     }
   }
-
-  // --- Text-to-Speech Function ---
-  const speakText = (text: string) => {
-    if ('speechSynthesis' in window) {
-      // Optional: Cancel any previous speech before starting new
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      // Optional: Configure voice, rate, pitch etc.
-      // const voices = window.speechSynthesis.getVoices();
-      // utterance.voice = voices.find(voice => voice.name === 'Google UK English Female'); // Example
-      // utterance.rate = 1; // From 0.1 to 10
-      // utterance.pitch = 1; // From 0 to 2
-
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.warn("Browser does not support Speech Synthesis.");
-    }
-  };
-  // ------------------------------
 
   // --- Add Audio Recording Logic --- 
   const handleMicMouseDown = async () => {
