@@ -14,6 +14,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { chatService } from "@/lib/chat-service"
 import type { Chat, Message, Attachment } from "@/types/chat"
 import { getGroqChatCompletion, getGroqTranscription, getGroqVisionCompletion } from "@/lib/groq-service"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function ChatPage() {
   const params = useParams()
@@ -357,7 +359,35 @@ export default function ChatPage() {
                       : "bg-gray-800/90 backdrop-blur-sm border border-gray-700 text-white"
                   }`}
                 >
-                  {message.content}
+                  {/* --- Render Markdown for AI messages --- */}
+                  {message.role === 'assistant' ? (
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({node, ...props}) => <a {...props} className="text-purple-400 hover:underline" target="_blank" rel="noopener noreferrer" />, 
+                        code: ({node, className, children, ...props}) => { 
+                          const inline = (props as any).inline; // Use type assertion
+                          const match = /language-(\w+)/.exec(className || '');
+                          return !inline && match ? (
+                            <pre className="bg-black/30 p-2 rounded my-2 overflow-x-auto">
+                              <code className={`language-${match[1]}`} {...props}>
+                                {String(children).replace(/\n$/, '')}
+                              </code>
+                            </pre>
+                          ) : (
+                            <code className="bg-gray-600/50 px-1 py-0.5 rounded text-sm" {...props}>
+                              {children}
+                            </code>
+                          );
+                        },
+                        p: ({node, ...props}) => <p {...props} className="mb-2 last:mb-0" />, 
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  ) : (
+                    message.content // Render user message content directly
+                  )}
 
                   {/* Render attachment if present */}
                   {message.attachment_type && (
