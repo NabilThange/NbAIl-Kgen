@@ -61,7 +61,9 @@ export const getGroqChatCompletion = async (userMessage: string) => {
 
 > You are not just answering — you are **collaborating**, **adapting**, and **enhancing** how the user thinks and works.
 
----`;
+---
+
+Always format your responses using clear Markdown syntax (bold, italics, lists, headings, code blocks) for structure and readability.`;
 
   try {
     const chatCompletion = await groq.chat.completions.create({
