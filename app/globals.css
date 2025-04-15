@@ -1,0 +1,249 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Base colors - purple theme from Version 1 */
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+
+  /* Primary color - purple */
+  --primary: 265 89% 50%;
+  --primary-foreground: 0 0% 98%;
+
+  /* Secondary colors */
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 265 89% 78%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 265 89% 50%;
+
+  /* Gradient colors */
+  --gradient-start: 265 89% 50%;
+  --gradient-end: 330 100% 65%;
+}
+
+/* Add scroll-smooth behavior to improve scrolling experience */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Add transition defaults for smoother UI interactions */
+* {
+  @apply border-border;
+  transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+body {
+  @apply bg-background text-foreground;
+}
+
+/* Improve button press animations for mobile */
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Add active state animations for buttons */
+button:active,
+a:active {
+  transform: scale(0.98);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-purple-700 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-purple-600;
+}
+
+/* Page transitions */
+.page-transition-enter {
+  opacity: 0;
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transition: opacity 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Grid background */
+.bg-grid-white\/\[0\.02\] {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.02)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+}
+
+/* Gradient text */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500;
+}
+
+/* Glow effects */
+.glow-purple {
+  box-shadow: 0 0 20px 5px rgba(139, 92, 246, 0.3);
+}
+
+.glow-purple-sm {
+  box-shadow: 0 0 10px 2px rgba(139, 92, 246, 0.2);
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-500/30;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-purple-600 hover:bg-purple-700 text-white;
+}
+
+.btn-outline {
+  @apply border-purple-500 text-white hover:bg-purple-500/20;
+}
+
+/* Animation utilities */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Glassmorphism */
+.glass {
+  @apply bg-gray-900/80 backdrop-blur-md;
+}
+
+.glass-light {
+  @apply bg-gray-800/50 backdrop-blur-sm;
+}
+
+/* Chat bubble animations */
+.chat-bubble-in {
+  animation: bubbleIn 0.3s ease forwards;
+}
+
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .mobile-input-area {
+    @apply flex-col space-y-2;
+  }
+
+  .mobile-button-group {
+    @apply flex justify-between w-full;
+  }
+}
+
+/* Add this at the end of the file */
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(120px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(120px) rotate(-360deg);
+  }
+}
+
+/* Add these utility classes for button interactions */
+.btn-interactive {
+  @apply transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-md;
+}
+
+.btn-glow:hover {
+  @apply shadow-purple-500/20;
+}
+
+/* Waveform animation for send button */
+@keyframes waveform {
+  0%,
+  100% {
+    height: 8px;
+  }
+  50% {
+    height: 16px;
+  }
+}
+
+.animate-waveform {
+  animation: waveform 1.2s ease-in-out infinite;
+}
+
+/* Improve input field appearance */
+.bg-transparent.border-0:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Ensure the input container has proper height */
+.rounded-full.border {
+  min-height: 56px;
+}
+
+/* Make sure the input text is properly aligned */
+.bg-transparent.border-0 {
+  height: 40px;
+  padding-left: 0;
+  padding-right: 0;
+}
