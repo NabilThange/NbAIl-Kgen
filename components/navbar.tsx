@@ -32,29 +32,6 @@ export default function Navbar() {
     setIsOpen(false)
   }, [pathname])
 
-  // Update the mobile menu button to animate between menu and X
-  const MenuButton = ({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) => {
-    return (
-      <Button variant="ghost" size="icon" onClick={onClick} className="relative h-10 w-10 z-50">
-        <span
-          className={`absolute block h-0.5 w-5 bg-white transform transition-all duration-300 ease-in-out ${
-            isOpen ? "rotate-45 translate-y-0" : "-translate-y-1.5"
-          }`}
-        />
-        <span
-          className={`absolute block h-0.5 w-5 bg-white transform transition-all duration-300 ease-in-out ${
-            isOpen ? "opacity-0" : "opacity-100"
-          }`}
-        />
-        <span
-          className={`absolute block h-0.5 w-5 bg-white transform transition-all duration-300 ease-in-out ${
-            isOpen ? "-rotate-45 translate-y-0" : "translate-y-1.5"
-          }`}
-        />
-      </Button>
-    )
-  }
-
   return (
     <>
       {/* Blurred overlay for mobile menu */}
@@ -62,24 +39,13 @@ export default function Navbar() {
         {isOpen && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
-              onClick={() => setIsOpen(false)}
-            />
-            <motion.div
               initial={{ y: "-100%" }}
               animate={{ y: 0 }}
               exit={{ y: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 shadow-lg z-40 md:hidden"
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="fixed top-0 left-0 right-0 backdrop-blur-md bg-black/30 rounded-md shadow-lg z-40 md:hidden mt-16"
             >
-              <div className="flex justify-end p-4">
-                <MenuButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
-              </div>
-              <div className="px-4 pt-2 pb-6 space-y-1">
+              <div className="px-4 py-4 space-y-2 text-center">
                 <MobileNavLink href="/features">Features</MobileNavLink>
                 <MobileNavLink href="/pricing">Pricing</MobileNavLink>
                 <MobileNavLink href="/research">Research</MobileNavLink>
@@ -130,8 +96,35 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <MenuButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
+            <div className="md:hidden flex items-center z-50">
+              <label className="hamburger cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isOpen}
+                  onChange={() => setIsOpen(!isOpen)}
+                  className="hidden"
+                />
+                <svg viewBox="0 0 32 32" className="h-8 w-8">
+                  <path
+                    className="line line-top-bottom"
+                    d="M27 10 13 10C10.8 10 9 8.2 9 6 9 3.5 10.8 2 13 2 15.2 2 17 3.8 17 6L17 26C17 28.2 18.8 30 21 30 23.2 30 25 28.2 25 26 25 23.8 23.2 22 21 22L7 22"
+                    stroke="white"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  ></path>
+                  <path
+                    className="line"
+                    d="M7 16 27 16"
+                    stroke="white"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  ></path>
+                </svg>
+              </label>
             </div>
           </div>
         </div>
@@ -166,9 +159,9 @@ function MobileNavLink({ href, children }: { href: string; children: React.React
   return (
     <Link
       href={href}
-      className={`block py-2 px-3 rounded-md text-base font-medium ${
-        isActive ? "bg-gray-800 text-white" : "text-gray-300 hover:bg-gray-800 hover:text-white"
-      }`}
+      className={`block py-2 px-3 rounded-md text-lg font-medium ${
+        isActive ? "text-white font-semibold" : "text-gray-300"
+      } hover:text-purple-500 hover:underline`}
     >
       {children}
     </Link>
