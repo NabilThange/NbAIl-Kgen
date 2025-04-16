@@ -1,27 +1,10 @@
 "use client"
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera, X, Mic, Send, Loader2, Sparkles, Check } from 'lucide-react';
+import { Camera, X, Mic, Send, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getGroqVisionCompletion } from '@/lib/groq-service'; // Assuming this can be reused
-import { motion } from "framer-motion";
-import MinimalHeader from "@/components/minimal-header";
-import Link from "next/link";
-import dynamic from "next/dynamic";
-
-// Dynamically import components for the info view
-const DynamicSparklesCore = dynamic(() => import("@/components/sparkles").then((mod) => mod.SparklesCore), {
-  ssr: false,
-  loading: () => <div className="h-full w-full absolute inset-0 z-0 bg-black/[0.96]"></div>,
-});
-
-// Loading component for info content
-const ContentLoading = () => (
-  <div className="flex items-center justify-center min-h-[60vh]">
-    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500"></div>
-  </div>
-);
 
 export default function ARModePage() {
   const router = useRouter();
@@ -29,34 +12,28 @@ export default function ARModePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoadingCamera, setIsLoadingCamera] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [lastResponse, setLastResponse] = useState<string | null>(null);
   const [lastImageBase64, setLastImageBase64] = useState<string | null>(null);
-  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [userQuery, setUserQuery] = useState<string>(""); // For potential text input alongside image
 
-  // Request camera access only when needed
+  // Request camera access
   useEffect(() => {
     let currentStream: MediaStream | null = null;
 
     const getCameraStream = async () => {
-      if (!isCameraActive) return; // Only run if camera view is active
-
       setError(null);
-      setIsLoadingCamera(true);
-      setStream(null); // Reset stream initially
+      setIsLoading(true);
       try {
-        console.log("Requesting camera access...");
         currentStream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
-            facingMode: "environment",
-            width: { ideal: 1280 },
+            facingMode: "environment", // Prefer rear camera
+            width: { ideal: 1280 }, // Request a reasonable resolution
             height: { ideal: 720 } 
           },
-          audio: false
+          audio: false // No audio needed for basic frame capture
         });
-        console.log("Camera stream acquired.");
         setStream(currentStream);
         if (videoRef.current) {
           videoRef.current.srcObject = currentStream;
@@ -75,31 +52,24 @@ export default function ARModePage() {
            setError("An unknown error occurred while accessing the camera.");
         }
         setStream(null);
-        setIsCameraActive(false); // Revert to info view on error
       } finally {
-        setIsLoadingCamera(false);
+        setIsLoading(false);
       }
     };
 
     getCameraStream();
 
-    // Cleanup: Stop stream if camera becomes inactive or component unmounts
+    // Cleanup function to stop the stream when the component unmounts
     return () => {
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
         console.log("Camera stream stopped.");
-        setStream(null);
       }
     };
-    // Rerun effect when isCameraActive changes
-  }, [isCameraActive]); 
+  }, []); // Empty dependency array ensures this runs only once on mount
 
-  // Close camera view and return to info screen
-  const handleCloseCamera = () => {
-    setError(null);
-    setLastResponse(null);
-    setLastImageBase64(null);
-    setIsCameraActive(false);
+  const handleClose = () => {
+    router.back(); // Go back to the previous page (likely chat)
   };
 
   // Capture frame and send to AI
@@ -162,30 +132,29 @@ export default function ARModePage() {
       // We can adapt the logic from the chat page later if needed
   };
 
-  // Camera View Component/JSX
-  const CameraView = (
+  return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center text-white overflow-hidden">
       {/* Loading State */}
-      {isLoadingCamera && (
+      {isLoading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30">
            <Loader2 className="h-10 w-10 animate-spin text-purple-500 mb-4" />
            <p className="text-lg">Starting Camera...</p>
         </div>
       )}
 
-      {/* Error State (handled within this view now) */}
-      {error && !isLoadingCamera && (
+      {/* Error State */}
+      {error && !isLoading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/80 z-30 p-8 text-center">
           <h2 className="text-2xl font-bold mb-4">Camera Error</h2>
           <p className="text-lg mb-6">{error}</p>
-          <Button onClick={handleCloseCamera} variant="destructive" size="lg">
-            Go Back to Info
+          <Button onClick={handleClose} variant="destructive" size="lg">
+            Go Back
           </Button>
         </div>
       )}
       
-      {/* Camera View & Controls (only if stream is active and no error) */}
-      {stream && !isLoadingCamera && !error && (
+      {/* Camera View & Controls (only if stream is active) */}
+      {stream && !isLoading && !error && (
         <>
           {/* Video Feed */}
           <video
@@ -206,8 +175,8 @@ export default function ARModePage() {
                 variant="ghost"
                 size="icon"
                 className="rounded-full bg-black/50 hover:bg-black/70 text-white"
-                onClick={handleCloseCamera}
-                aria-label="Close Camera View"
+                onClick={handleClose}
+                aria-label="Close AR Mode"
               >
                 <X className="h-6 w-6" />
               </Button>
@@ -267,106 +236,4 @@ export default function ARModePage() {
       )}
     </div>
   );
-
-  // Informational View Component/JSX
-  const InfoView = (
-     <div className="min-h-screen bg-black/[0.96] antialiased bg-grid-white/[0.02] flex flex-col relative overflow-x-hidden">
-       {/* Interactive background */}
-       <div className="h-full w-full absolute inset-0 z-0">
-         <DynamicSparklesCore
-           id="tsparticlesfullpage"
-           background="transparent"
-           minSize={0.6}
-           maxSize={1.4}
-           particleDensity={50}
-           className="w-full h-full"
-           particleColor="#FFFFFF"
-         />
-       </div>
-       <MinimalHeader title="AR Mode" />
-       <main className="flex-1 pt-16 relative z-10">
-         <div className="container mx-auto px-4 py-12 max-w-4xl">
-           <Suspense fallback={<ContentLoading />}>
-             <motion.div
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.5 }}
-               className="bg-gray-800/90 backdrop-blur-md rounded-xl p-8 border border-gray-700 glow-purple-sm"
-             >
-               <div className="flex flex-col md:flex-row items-center gap-8">
-                 <div className="w-full md:w-1/2">
-                   <h2 className="text-2xl font-bold text-white mb-4">Experience Augmented Reality Assistance</h2>
-                   <p className="text-gray-300 mb-6">
-                     AR Mode overlays helpful information in your field of view, allowing NbAIl to provide contextual
-                     assistance in the real world.
-                   </p>
-                   {/* Feature list from previous version */}
-                   <div className="space-y-4 mb-6">
-                     <div className="flex items-start">
-                       <div className="bg-purple-500/20 rounded-full p-1 mr-3 mt-0.5">
-                         <Check className="h-4 w-4 text-purple-500" />
-                       </div>
-                       <p className="text-gray-300">Get real-time translations</p>
-                     </div>
-                     <div className="flex items-start">
-                       <div className="bg-purple-500/20 rounded-full p-1 mr-3 mt-0.5">
-                         <Check className="h-4 w-4 text-purple-500" />
-                       </div>
-                       <p className="text-gray-300">Identify objects</p>
-                     </div>
-                     <div className="flex items-start">
-                       <div className="bg-purple-500/20 rounded-full p-1 mr-3 mt-0.5">
-                         <Check className="h-4 w-4 text-purple-500" />
-                       </div>
-                       <p className="text-gray-300">Receive step-by-step guidance</p>
-                     </div>
-                   </div>
-                   {/* Button to activate camera */}
-                   <Button
-                     className="bg-purple-600 hover:bg-purple-700 text-white"
-                     onClick={() => setIsCameraActive(true)} // Set state to true
-                   >
-                    Activate AR Camera
-                   </Button>
-                 </div>
-                 {/* Illustration placeholder */}
-                 <div className="w-full md:w-1/2">
-                   <div className="relative">
-                     <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 glow-purple-sm">
-                       <img
-                         src="/placeholder.svg?height=300&width=400" // Use placeholder or actual image
-                         alt="AR Mode Illustration"
-                         className="w-full h-auto"
-                       />
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </motion.div>
-             {/* How it works section (optional, can be added back) */}
-           </Suspense>
-         </div>
-       </main>
-       {/* Footer from previous version */}
-       <footer className="border-t border-gray-800 glass py-6 relative z-10">
-         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
-           <p className="text-gray-400 text-sm mb-4 md:mb-0">
-             AR Mode requires camera permissions.
-           </p>
-           <div className="flex space-x-4">
-             <Button
-               variant="link"
-               className="text-purple-500 hover:text-purple-400 text-sm font-medium"
-               onClick={() => router.back()} // Go back to previous page
-             >
-               Return to Chat
-             </Button>
-           </div>
-         </div>
-       </footer>
-     </div>
-  );
-
-  // Return the correct view based on state
-  return isCameraActive ? CameraView : InfoView;
 }
