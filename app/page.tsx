@@ -1,11 +1,19 @@
+import dynamic from "next/dynamic"
 import Navbar from "@/components/navbar"
 import Hero from "@/components/hero"
-import Features from "@/components/features-section"
-import Footer from "@/components/footer"
-import UseCases from "@/components/use-cases-section"
-import Testimonials from "@/components/testimonials"
-import CTA from "@/components/cta"
+// import Features from "@/components/features-section"
+// import Footer from "@/components/footer"
+// import UseCases from "@/components/use-cases-section"
+// import Testimonials from "@/components/testimonials"
+// import CTA from "@/components/cta"
 import { SparklesCore } from "@/components/sparkles"
+
+// Lazy load components below the fold
+const Features = dynamic(() => import("@/components/features-section"))
+const UseCases = dynamic(() => import("@/components/use-cases-section"))
+const Testimonials = dynamic(() => import("@/components/testimonials"))
+const CTA = dynamic(() => import("@/components/cta"))
+const Footer = dynamic(() => import("@/components/footer"))
 
 export default function Home() {
   return (
@@ -17,7 +25,7 @@ export default function Home() {
           background="transparent"
           minSize={0.6}
           maxSize={1.4}
-          particleDensity={100}
+          particleDensity={50}
           className="w-full h-full"
           particleColor="#FFFFFF"
         />

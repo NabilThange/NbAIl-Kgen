@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Star } from "lucide-react"
+import Image from "next/image"
 
 export default function Testimonials() {
   const testimonials = [
@@ -10,7 +11,7 @@ export default function Testimonials() {
       role: "Software Engineer",
       content:
         "NbAIl has completely transformed my workflow. The screen awareness feature helps me debug code faster than ever before.",
-      avatar: "/placeholder.svg?height=80&width=80",
+      avatar: "/placeholder.svg",
       stars: 5,
     },
     {
@@ -18,7 +19,7 @@ export default function Testimonials() {
       role: "UX Designer",
       content:
         "As a designer, having an AI that can actually see and understand my work is game-changing. The feedback is surprisingly insightful.",
-      avatar: "/placeholder.svg?height=80&width=80",
+      avatar: "/placeholder.svg",
       stars: 5,
     },
     {
@@ -26,7 +27,7 @@ export default function Testimonials() {
       role: "Graduate Student",
       content:
         "I use NbAIl to help me understand research papers and organize my notes. It's like having a research assistant available 24/7.",
-      avatar: "/placeholder.svg?height=80&width=80",
+      avatar: "/placeholder.svg",
       stars: 4,
     },
   ]
@@ -67,9 +68,11 @@ export default function Testimonials() {
               </div>
               <p className="text-gray-300 mb-6">"{testimonial.content}"</p>
               <div className="flex items-center">
-                <img
+                <Image
                   src={testimonial.avatar || "/placeholder.svg"}
                   alt={testimonial.name}
+                  width={40}
+                  height={40}
                   className="h-10 w-10 rounded-full mr-3"
                 />
                 <div>

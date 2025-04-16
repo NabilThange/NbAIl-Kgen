@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Glasses, Mic, Paperclip, X, ArrowUp, Plus, Monitor, AudioWaveform, Image as ImageIcon } from "lucide-react"
+import { Glasses, Mic, Paperclip, X, ArrowUp, Plus, Monitor, AudioWaveform } from "lucide-react"
 import Link from "next/link"
 import { SparklesCore } from "@/components/sparkles"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -16,16 +16,8 @@ import type { Chat, Message, Attachment } from "@/types/chat"
 import { getGroqChatCompletion, getGroqTranscription, getGroqVisionCompletion } from "@/lib/groq-service"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-
-// Import the Spline viewer script - ensure this script tag is placed appropriately,
-// potentially in the head of your document or just before the spline-viewer component.
-// For this example, we'll assume it can be placed near the component.
-// Note: Using dangerouslySetInnerHTML for scripts loaded this way isn't standard in React/Next.js.
-// A better approach might be using next/script or placing it in _document.js / _app.js.
-// However, for direct replacement as requested:
-const SplineScript = () => (
-  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js" async></script>
-);
+import Image from "next/image"
+import Script from "next/script"
 
 export default function ChatPage() {
   const params = useParams()
@@ -360,11 +352,11 @@ export default function ChatPage() {
   // Start recording specifically for the overlay mode
   const startOverlayRecording = async () => {
     if (isVoiceRecordingOverlay || typeof navigator === 'undefined' || !navigator.mediaDevices) {
-      console.warn("Media devices not available or already recording.")
+      // console.warn("Media devices not available or already recording.") // Keep warn
       return
     }
 
-    console.log("Starting overlay recording...")
+    // console.log("Starting overlay recording...") // Remove log
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       mediaRecorderRef.current = new MediaRecorder(stream)
@@ -394,7 +386,7 @@ export default function ChatPage() {
       }
 
       mediaRecorderRef.current.onstop = async () => {
-        console.log("Overlay recording stopped.")
+        // console.log("Overlay recording stopped.") // Remove log
         if (silenceTimerRef.current) {
           clearTimeout(silenceTimerRef.current)
           silenceTimerRef.current = null
@@ -406,7 +398,7 @@ export default function ChatPage() {
             // Process the audio for TTS response *without* adding to chat messages
             await processVoiceInput(audioBlob)
         } else {
-            console.log("Skipping processing: Not in overlay mode or no audio chunks.")
+            // console.log("Skipping processing: Not in overlay mode or no audio chunks.") // Remove log
         }
         
         // Reset state regardless of processing
@@ -419,7 +411,7 @@ export default function ChatPage() {
 
       mediaRecorderRef.current.start(500) // Start recording, collect data in chunks (e.g., every 500ms)
       resetSilenceTimer() // Start initial silence timer
-      console.log("Overlay recording started.")
+      // console.log("Overlay recording started.") // Remove log
 
     } catch (error) {
       console.error("Error accessing microphone for overlay:", error)
@@ -430,9 +422,9 @@ export default function ChatPage() {
 
   // Placeholder for handling audio processing and TTS
   const processVoiceInput = async (audioBlob: Blob) => {
-    console.log("Processing voice input... Blob size:", audioBlob.size)
+    // console.log("Processing voice input... Blob size:", audioBlob.size) // Remove log
     if (audioBlob.size === 0) {
-      console.warn("Skipping processing: Empty audio blob.")
+      // console.warn("Skipping processing: Empty audio blob.") // Keep warn
       setIsVoiceRecordingOverlay(false) // Ensure state is reset
       setIsSpeaking(false)
       return
@@ -441,18 +433,18 @@ export default function ChatPage() {
     setIsVoiceRecordingOverlay(false) // Recording stopped, now processing
     setIsSpeaking(true) // Indicate processing/speaking phase
     try {
-      console.log("Transcribing...")
+      // console.log("Transcribing...") // Remove log
       const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" })
       const transcription = await getGroqTranscription(audioFile)
-      console.log("Transcription:", transcription)
+      // console.log("Transcription:", transcription) // Remove log
       
       if (transcription && !transcription.toLowerCase().startsWith("sorry") && transcription.trim().length > 0) {
-        console.log("Getting AI response...")
+        // console.log("Getting AI response...") // Remove log
         const aiResponse = await getGroqChatCompletion(transcription)
-        console.log("AI Response:", aiResponse)
+        // console.log("AI Response:", aiResponse) // Remove log
         speakText(aiResponse)
       } else {
-        console.log("Transcription failed or empty, not sending to AI.")
+        // console.log("Transcription failed or empty, not sending to AI.") // Remove log
         speakText("Sorry, I couldn't understand that. Please try again.") // Speak clarification
       }
     } catch (error) {
@@ -466,7 +458,7 @@ export default function ChatPage() {
   // TTS Function
   const speakText = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
-      console.warn("Speech synthesis not supported.")
+      // console.warn("Speech synthesis not supported.") // Keep warn
       setIsSpeaking(false)
       closeVoiceOverlay() // Close overlay even if TTS fails
       return
@@ -478,7 +470,7 @@ export default function ChatPage() {
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.onstart = () => setIsSpeaking(true)
     utterance.onend = () => {
-        console.log("TTS finished.")
+        // console.log("TTS finished.") // Remove log
         setIsSpeaking(false)
         closeVoiceOverlay() // Automatically close overlay after speaking
     }
@@ -543,10 +535,7 @@ export default function ChatPage() {
           {messages.length === 0 ? (
             // Replace the empty chat message with the Spline viewer
             <div className="flex flex-col items-center justify-center min-h-[60vh] md:min-h-[calc(100vh-200px)]">
-              {/* Ensure the script is loaded */}
-              <SplineScript />
               {/* Spline Viewer Embed */}
-              {/* ts-ignore Property 'spline-viewer' does not exist on type 'JSX.IntrinsicElements'. */}
               <spline-viewer
                 url="https://prod.spline.design/qCEGpu69o0sy21p3/scene.splinecode"
                 style={{
@@ -557,7 +546,7 @@ export default function ChatPage() {
                   overflow: 'hidden',
                   margin: 'auto', // Center horizontally
                 }}
-              >{/* ts-ignore */}</spline-viewer>
+              >{/* REMOVE ts-ignore */}</spline-viewer>
             </div>
           ) : (
             messages.map((message) => (
@@ -615,9 +604,11 @@ export default function ChatPage() {
                       )}
                       {message.attachment_type === "image" && message.attachment_url && (
                         <div className="mt-2 rounded-md overflow-hidden">
-                          <img
+                          <Image
                             src={message.attachment_url || "/placeholder.svg"}
                             alt="Attached image"
+                            width={400}
+                            height={240}
                             className="w-full h-auto max-h-60 object-cover"
                           />
                         </div>
@@ -719,9 +710,11 @@ export default function ChatPage() {
         {imageBase64 && (
           <div className="max-w-3xl mx-auto mb-2">
             <div className="relative inline-block bg-gray-800/80 backdrop-blur-md border border-gray-700 rounded-lg p-1">
-              <img 
+              <Image 
                 src={imageBase64} 
                 alt="Selected preview" 
+                height={64}
+                width={100}
                 className="h-16 w-auto max-w-xs rounded object-contain"
               />
               <button 
@@ -901,7 +894,6 @@ export default function ChatPage() {
             }}
           >
             {/* Spline Viewer as Background */} 
-            {/* @ts-ignore */} 
             <spline-viewer
               url="https://prod.spline.design/IuYdAhKFWxs0vp0f/scene.splinecode"
               style={{
@@ -947,6 +939,9 @@ export default function ChatPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Load Spline Viewer Script */}
+      <Script src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js" strategy="lazyOnload" />
     </div>
   )
 }

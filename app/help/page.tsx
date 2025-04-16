@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Brain, ArrowLeft, HelpCircle, Search, MessageSquare, Glasses, Monitor, Book, Video, Mail } from "lucide-react"
 import { SparklesCore } from "@/components/sparkles"
+import Image from "next/image"
 
 export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -265,9 +266,10 @@ export default function HelpPage() {
                       className="bg-gray-800/90 backdrop-blur-md rounded-xl border border-gray-700 overflow-hidden hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10"
                     >
                       <div className="relative aspect-video bg-gray-900 flex items-center justify-center">
-                        <img
-                          src={`/placeholder.svg?height=200&width=400`}
+                        <Image
+                          src={`/placeholder.svg`}
                           alt={video.title}
+                          fill={true}
                           className="w-full h-full object-cover opacity-70"
                         />
                         <div className="absolute inset-0 flex items-center justify-center">

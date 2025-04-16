@@ -2,9 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, useTransform, useScroll } from "framer-motion"
 import { ArrowRight, Brain, Sparkles } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import Image from "next/image"
 
 interface ParticleStyle {
   width: number
@@ -177,12 +178,14 @@ export default function Hero() {
                 <div className="w-3 h-3 rounded-full bg-green-500" />
               </div>
             </div>
-            {/* Replace with placeholder.svg */}
-            <div className="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gray-900 flex items-center justify-center">
-              <img
-                src="/placeholder.svg?height=600&width=800"
+            {/* Replace with placeholder.svg using next/image */}
+            <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gray-900 flex items-center justify-center">
+              <Image
+                src="/placeholder.svg"
                 alt="NbAIl AI Assistant"
-                className="w-full h-full object-cover"
+                fill={true}
+                className="object-cover"
+                priority
               />
             </div>
           </div>

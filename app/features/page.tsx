@@ -7,6 +7,7 @@ import { Mic, Monitor, FileText, Glasses, Brain, History, Zap, Lock, Globe, Spar
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { SparklesCore } from "@/components/sparkles"
+import Image from "next/image"
 
 export default function FeaturesPage() {
   const mainFeatures = [
@@ -163,7 +164,12 @@ export default function FeaturesPage() {
             >
               <div className="aspect-w-16 aspect-h-9 relative">
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                  <img src="/placeholder.svg?height=600&width=1200" alt="NbAIl Demo" className="w-full h-auto" />
+                  <Image
+                    src="/placeholder.svg"
+                    alt="NbAIl Demo"
+                    fill={true}
+                    className="w-full h-auto"
+                  />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <div className="w-20 h-20 rounded-full bg-purple-500/90 flex items-center justify-center cursor-pointer hover:bg-purple-600/90 transition-colors">
                       <svg

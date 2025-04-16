@@ -7,6 +7,7 @@ import { GraduationCap, Code, Palette, Users, Briefcase, Stethoscope, ShoppingBa
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { SparklesCore } from "@/components/sparkles"
+import Image from "next/image"
 
 export default function UseCasesPage() {
   const categories = [
@@ -181,7 +182,14 @@ export default function UseCasesPage() {
                   >
                     <div className="w-full lg:w-1/2">
                       <div className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 glow-purple-sm">
-                        <img src={useCase.image || "/placeholder.svg"} alt={useCase.title} className="w-full h-auto" />
+                        <Image
+                          src={useCase.image || "/placeholder.svg"}
+                          alt={useCase.title}
+                          width={0}
+                          height={0}
+                          sizes="(max-width: 1024px) 100vw, 50vw"
+                          className="w-full h-auto"
+                        />
                       </div>
                     </div>
                     <div className="w-full lg:w-1/2">

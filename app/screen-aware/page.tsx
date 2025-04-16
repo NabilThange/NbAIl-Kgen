@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Monitor, Check, Shield } from "lucide-react"
+import { Check, Shield } from "lucide-react"
 import { SparklesCore } from "@/components/sparkles"
 import MinimalHeader from "@/components/minimal-header"
 
@@ -91,9 +92,11 @@ export default function ScreenAwarePage() {
               <div className="w-full md:w-1/2">
                 <div className="relative">
                   <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 glow-purple-sm">
-                    <img
-                      src="/placeholder.svg?height=300&width=400"
+                    <Image
+                      src="/placeholder.svg"
                       alt="ScreenAware Illustration"
+                      width={400}
+                      height={300}
                       className="w-full h-auto"
                     />
                   </div>
