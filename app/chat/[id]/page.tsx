@@ -17,6 +17,16 @@ import { getGroqChatCompletion, getGroqTranscription, getGroqVisionCompletion } 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
+// Import the Spline viewer script - ensure this script tag is placed appropriately,
+// potentially in the head of your document or just before the spline-viewer component.
+// For this example, we'll assume it can be placed near the component.
+// Note: Using dangerouslySetInnerHTML for scripts loaded this way isn't standard in React/Next.js.
+// A better approach might be using next/script or placing it in _document.js / _app.js.
+// However, for direct replacement as requested:
+const SplineScript = () => (
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js" async></script>
+);
+
 export default function ChatPage() {
   const params = useParams()
   const router = useRouter()
@@ -34,11 +44,17 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [imageBase64, setImageBase64] = useState<string | null>(null)
+  const [isVoiceOverlayOpen, setIsVoiceOverlayOpen] = useState(false)
+  const [isVoiceRecordingOverlay, setIsVoiceRecordingOverlay] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const SILENCE_THRESHOLD = 1200 // Adjusted to 1.2 seconds
 
   // Mock files for the picker
   const mockFiles = [
@@ -300,6 +316,193 @@ export default function ChatPage() {
   }
   // -----------------------------
 
+  // --- Voice Assistant Overlay Logic ---
+  const openVoiceOverlay = () => {
+    setIsVoiceOverlayOpen(true)
+    // Automatically start recording when overlay opens
+    // We will implement startOverlayRecording next
+    // startOverlayRecording(); 
+  }
+
+  const closeVoiceOverlay = () => {
+    // Stop recording if active
+    if (mediaRecorderRef.current && isVoiceRecordingOverlay) {
+      mediaRecorderRef.current.stop()
+      // onstop will handle cleanup and processing
+    }
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+    // Stop TTS if speaking
+    if (isSpeaking && typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+    }
+    setIsVoiceOverlayOpen(false)
+    setIsVoiceRecordingOverlay(false)
+  }
+
+  // Effect to handle Escape key for closing overlay
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isVoiceOverlayOpen) {
+        closeVoiceOverlay()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isVoiceOverlayOpen]) // Dependency ensures listener is added/removed correctly
+
+  // Start recording specifically for the overlay mode
+  const startOverlayRecording = async () => {
+    if (isVoiceRecordingOverlay || typeof navigator === 'undefined' || !navigator.mediaDevices) {
+      console.warn("Media devices not available or already recording.")
+      return
+    }
+
+    console.log("Starting overlay recording...")
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      mediaRecorderRef.current = new MediaRecorder(stream)
+      audioChunksRef.current = [] // Reset chunks
+      setIsVoiceRecordingOverlay(true)
+      setIsSpeaking(false) // Ensure speaking state is reset
+
+      // --- Silence Detection --- 
+      const resetSilenceTimer = () => {
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current)
+        }
+        silenceTimerRef.current = setTimeout(() => {
+          console.log("Silence detected, stopping recording.")
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.stop()
+          }
+        }, SILENCE_THRESHOLD)
+      }
+      // ------------------------
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+          resetSilenceTimer() // Reset timer on receiving data
+        }
+      }
+
+      mediaRecorderRef.current.onstop = async () => {
+        console.log("Overlay recording stopped.")
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current)
+          silenceTimerRef.current = null
+        }
+
+        // Only process if we are in overlay mode and have chunks
+        if (isVoiceOverlayOpen && audioChunksRef.current.length > 0) {
+            const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+            // Process the audio for TTS response *without* adding to chat messages
+            await processVoiceInput(audioBlob)
+        } else {
+            console.log("Skipping processing: Not in overlay mode or no audio chunks.")
+        }
+        
+        // Reset state regardless of processing
+        setIsVoiceRecordingOverlay(false)
+        audioChunksRef.current = [] // Clear chunks
+        
+        // Clean up the stream tracks
+        stream.getTracks().forEach(track => track.stop())
+      }
+
+      mediaRecorderRef.current.start(500) // Start recording, collect data in chunks (e.g., every 500ms)
+      resetSilenceTimer() // Start initial silence timer
+      console.log("Overlay recording started.")
+
+    } catch (error) {
+      console.error("Error accessing microphone for overlay:", error)
+      alert("Could not access microphone. Please check permissions.")
+      closeVoiceOverlay() // Close overlay if mic access fails
+    }
+  }
+
+  // Placeholder for handling audio processing and TTS
+  const processVoiceInput = async (audioBlob: Blob) => {
+    console.log("Processing voice input... Blob size:", audioBlob.size)
+    if (audioBlob.size === 0) {
+      console.warn("Skipping processing: Empty audio blob.")
+      setIsVoiceRecordingOverlay(false) // Ensure state is reset
+      setIsSpeaking(false)
+      return
+    }
+    
+    setIsVoiceRecordingOverlay(false) // Recording stopped, now processing
+    setIsSpeaking(true) // Indicate processing/speaking phase
+    try {
+      console.log("Transcribing...")
+      const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" })
+      const transcription = await getGroqTranscription(audioFile)
+      console.log("Transcription:", transcription)
+      
+      if (transcription && !transcription.toLowerCase().startsWith("sorry") && transcription.trim().length > 0) {
+        console.log("Getting AI response...")
+        const aiResponse = await getGroqChatCompletion(transcription)
+        console.log("AI Response:", aiResponse)
+        speakText(aiResponse)
+      } else {
+        console.log("Transcription failed or empty, not sending to AI.")
+        speakText("Sorry, I couldn't understand that. Please try again.") // Speak clarification
+      }
+    } catch (error) {
+      console.error("Error processing voice input:", error)
+      speakText("Sorry, I encountered an error processing your request.") // Speak error
+    } finally {
+      // TTS onend handles setIsSpeaking(false)
+    }
+  }
+
+  // TTS Function
+  const speakText = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      console.warn("Speech synthesis not supported.")
+      setIsSpeaking(false)
+      closeVoiceOverlay() // Close overlay even if TTS fails
+      return
+    }
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel()
+
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => {
+        console.log("TTS finished.")
+        setIsSpeaking(false)
+        closeVoiceOverlay() // Automatically close overlay after speaking
+    }
+    utterance.onerror = (event) => {
+      console.error("Speech synthesis error:", event.error)
+      setIsSpeaking(false)
+      closeVoiceOverlay() // Close overlay on TTS error
+    }
+    
+    // Optional: Select a voice
+    // const voices = window.speechSynthesis.getVoices();
+    // utterance.voice = voices[/* index of desired voice */]; 
+
+    window.speechSynthesis.speak(utterance)
+  }
+
+  // Effect to start recording when overlay opens
+  useEffect(() => {
+    if (isVoiceOverlayOpen) {
+      startOverlayRecording();
+    }
+    // No cleanup needed here as closeVoiceOverlay handles stopping
+  }, [isVoiceOverlayOpen])
+
   // If still loading or no chat is found, show loading
   if (isLoading) {
     return (
@@ -338,11 +541,23 @@ export default function ChatPage() {
       <main className="flex-1 overflow-y-auto px-4 pt-16 pb-0 md:px-6 md:pt-16 md:pb-0 relative z-10">
         <div className="max-w-3xl mx-auto space-y-6">
           {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full min-h-[50vh]">
-              <div className="text-center text-gray-400">
-                <h3 className="text-xl font-medium text-white mb-2">Start a new conversation</h3>
-                <p>Type a message to begin chatting with NbAIl</p>
-              </div>
+            // Replace the empty chat message with the Spline viewer
+            <div className="flex flex-col items-center justify-center min-h-[60vh] md:min-h-[calc(100vh-200px)]">
+              {/* Ensure the script is loaded */}
+              <SplineScript />
+              {/* Spline Viewer Embed */}
+              {/* ts-ignore Property 'spline-viewer' does not exist on type 'JSX.IntrinsicElements'. */}
+              <spline-viewer
+                url="https://prod.spline.design/qCEGpu69o0sy21p3/scene.splinecode"
+                style={{
+                  width: '100%',
+                  height: '600px', // Increased height
+                  maxHeight: '80vh', // Increased max height
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  margin: 'auto', // Center horizontally
+                }}
+              >{/* ts-ignore */}</spline-viewer>
             </div>
           ) : (
             messages.map((message) => (
@@ -522,7 +737,7 @@ export default function ChatPage() {
         {/* End Image Preview Section */} 
 
         <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSubmit} className="relative">
+          <div className="relative">
             {/* Main input container - ChatGPT style rounded pill */}
             <div className="flex items-center justify-between bg-gray-900/80 backdrop-blur-md rounded-full border border-gray-800 hover:border-purple-500/50 transition-all duration-200">
               {/* Left side buttons */}
@@ -628,26 +843,31 @@ export default function ChatPage() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button
-                        type="submit"
-                        disabled={!input.trim() && !selectedFile}
+                      <Button
+                        type={input.trim() || selectedImageFile ? "submit" : "button"}
+                        onClick={(e) => {
+                          if (input.trim() || selectedImageFile) {
+                            handleSubmit(e)
+                          } else {
+                            setIsVoiceOverlayOpen(true)
+                          }
+                        }}
+                        disabled={isTranscribing || isRecording}
                         className={`p-2 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-md hover:shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed ${
-                          input.trim() || selectedFile
+                          input.trim() || selectedImageFile
                             ? "bg-purple-600 hover:bg-purple-700 text-white"
-                            : "bg-purple-600 text-white"
+                            : "bg-gray-700 hover:bg-gray-600 text-purple-400"
                         }`}
                       >
-                        {input.trim() || selectedFile ? (
+                        {input.trim() || selectedImageFile ? (
                           <ArrowUp className="h-5 w-5" />
                         ) : (
-                          <div className="flex items-center justify-center h-5 w-5">
-                            <AudioWaveform className="h-5 w-5" />
-                          </div>
+                          <AudioWaveform className="h-5 w-5" />
                         )}
-                      </button>
+                      </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p>Send Message</p>
+                      <p>{input.trim() || selectedImageFile ? "Send Message" : "Activate Voice Assistant"}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -662,9 +882,71 @@ export default function ChatPage() {
               accept="image/png, image/jpeg, image/jpg"
               style={{ display: "none" }}
             />
-          </form>
+          </div>
         </div>
       </div>
+
+      {/* Voice Assistant Overlay */} 
+      <AnimatePresence>
+        {isVoiceOverlayOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 p-4"
+            onClick={(e) => { 
+              if (e.target === e.currentTarget) {
+                // closeVoiceOverlay(); // Might be too sensitive
+              }
+            }}
+          >
+            {/* Spline Viewer as Background */} 
+            {/* @ts-ignore */} 
+            <spline-viewer
+              url="https://prod.spline.design/IuYdAhKFWxs0vp0f/scene.splinecode"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 1, // Behind controls
+              }}
+            />
+
+            {/* Close Button (ensure it's above spline) */} 
+            <button
+              onClick={closeVoiceOverlay}
+              className="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors p-2 rounded-full bg-white/10 hover:bg-white/20 z-10" // Increased z-index
+              aria-label="Close voice assistant"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Microphone/Status Indicator (ensure it's above spline) */} 
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center z-10 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full"> {/* Increased z-index & added background */} 
+              {isVoiceRecordingOverlay && !isSpeaking && (
+                <div className="flex items-center space-x-2 text-purple-300 animate-pulse">
+                  <Mic className="h-5 w-5" />
+                  <span className="text-sm">Listening...</span>
+                </div>
+              )}
+              {isSpeaking && (
+                <div className="flex items-center space-x-2 text-green-300">
+                  <AudioWaveform className="h-5 w-5 animate-pulse" />
+                  <span className="text-sm">Speaking...</span>
+                </div>
+              )}
+              {!isVoiceRecordingOverlay && !isSpeaking && (
+                 <div className="flex items-center space-x-2 text-gray-400">
+                   <Mic className="h-5 w-5" />
+                   <span className="text-sm">Processing...</span> {/* Updated message */} 
+                 </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
