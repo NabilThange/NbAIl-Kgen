@@ -51,7 +51,7 @@ export default function ARCameraPage() { // Renamed component for clarity
   // Request camera access and get dimensions
   useEffect(() => {
     let currentStream: MediaStream | null = null;
-    const videoElement = videoRef.current;
+    // We will access videoRef.current inside getCameraStream
 
     const getCameraStream = async () => {
       setError(null);
@@ -66,31 +66,34 @@ export default function ARCameraPage() { // Renamed component for clarity
           audio: false
         });
         console.log("Stream received:", currentStream);
-        console.log("Active tracks:", currentStream.getTracks().filter(t => t.readyState === 'live'));
-        setStream(currentStream); // Set stream state
+        setStream(currentStream); // Set stream state FIRST
 
+        // Now, access videoRef.current AFTER stream is confirmed
+        const videoElement = videoRef.current;
         if (videoElement) {
-          console.log("Video element found, assigning stream...");
+          console.log("Video element ref available, assigning stream...");
           videoElement.srcObject = currentStream;
           videoElement.onloadedmetadata = () => {
-              console.log("Video metadata loaded."); // Log when metadata loads
-              setVideoDimensions({
-                  width: videoElement.videoWidth,
-                  height: videoElement.videoHeight
-              });
-              console.log(`Video dimensions set: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
-              // Start detection loop only after model and video are ready
-              requestRef.current = requestAnimationFrame(detectObjects);
+            console.log("Video metadata loaded.");
+            setVideoDimensions({
+              width: videoElement.videoWidth,
+              height: videoElement.videoHeight
+            });
+            console.log(`Video dimensions set: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
+            // Start detection loop only after model and video are ready
+            requestRef.current = requestAnimationFrame(detectObjects);
           };
-          // Explicitly try to play
           videoElement.play().catch(err => {
             console.error("Video play failed:", err);
             setError(`Video playback failed: ${err.message}. Ensure autoplay is allowed.`);
           });
           console.log("Attempted to play video.");
         } else {
-            console.error("Video element ref not available when stream was ready.");
-            setError("Video element not ready.");
+          console.error("Video element ref was null/undefined AFTER stream was ready.");
+          setError("Video element failed to mount in time.");
+          // Stop the stream if we can't assign it
+          currentStream.getTracks().forEach(track => track.stop());
+          setStream(null);
         }
       } catch (err) {
         console.error("Error accessing camera:", err);
@@ -106,24 +109,36 @@ export default function ARCameraPage() { // Renamed component for clarity
            setError("An unknown error occurred while accessing the camera.");
         }
         setStream(null);
-      } 
-      // Removed finally block setting modelLoading
+      }
     };
 
     getCameraStream();
 
     // Cleanup function
     return () => {
+      console.log("Cleanup effect running...") // Add log for cleanup
       if (requestRef.current) {
-          cancelAnimationFrame(requestRef.current);
+        cancelAnimationFrame(requestRef.current);
       }
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
-        console.log("Camera stream stopped.");
+      // Ensure we only stop tracks if currentStream was assigned
+      if (currentStream) { 
+        currentStream.getTracks().forEach(track => {
+          console.log("Stopping track:", track.label)
+          track.stop()
+        });
+        console.log("Camera stream stopped via cleanup.");
+      }
+      // Also try stopping via videoRef if srcObject was set
+      if (videoRef.current && videoRef.current.srcObject) {
+         const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+         tracks.forEach(track => {
+            console.log("Stopping track via videoRef:", track.label)
+            track.stop()
+         });
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
+  }, []); // Keep empty dependency array
 
   // Detection loop function
   const detectObjects = useCallback(async () => {
