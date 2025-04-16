@@ -166,37 +166,10 @@ export default function ARCameraPage() { // Renamed component for clarity
                 autoPlay
                 playsInline
                 muted
-                className="max-w-full max-h-full object-contain" // Use contain to see the whole feed
+                className="max-w-full max-h-full object-contain border-4 border-red-500" // Added red border for visibility
              />
-             {/* Detection Overlays */} 
-             {detections.map((detection, index) => {
-                 const [x, y, width, height] = detection.bbox;
-                 // Adjust coordinates based on video display size vs actual size
-                 const displayX = x * scaleX;
-                 const displayY = y * scaleY;
-                 const displayWidth = width * scaleX;
-                 const displayHeight = height * scaleY;
-                 
-                 return (
-                    <div
-                        key={index}
-                        className="ar-box absolute border-2 border-[#00ffff] rounded-md animate-glow p-1" // Tailwind + custom class
-                        style={{
-                           left: `${displayX}px`,
-                           top: `${displayY}px`,
-                           width: `${displayWidth}px`,
-                           height: `${displayHeight}px`,
-                        }}
-                    >
-                        <div className="scan-bar absolute w-full h-[3px] bg-gradient-to-r from-transparent via-[#00ffff] to-transparent animate-scan"></div>
-                        <div 
-                           className="label absolute bottom-[-20px] left-0 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded"
-                        >
-                           {detection.class} ({(detection.score * 100).toFixed(0)}%)
-                        </div>
-                    </div>
-                 );
-             })}
+             {/* Detection Overlays - Temporarily commented out */}
+             {/* {detections.map((detection, index) => { ... })} */}
           </div>
 
           {/* Top Bar - Kept for closing */}
@@ -212,33 +185,12 @@ export default function ARCameraPage() { // Renamed component for clarity
              </Button>
           </div>
 
-          {/* Removed Bottom Bar / Capture Button */} 
-          {/* Optional: Add a status indicator for detection counts? */}
-           <div className="absolute bottom-4 left-4 z-10 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
-               <Eye className="inline h-4 w-4 mr-1.5 text-cyan-400"/>
-               {detections.length} {detections.length === 1 ? 'object' : 'objects'} detected
-           </div>
+          {/* Detection Count - Temporarily commented out */}
+          {/* <div className="absolute bottom-4 left-4 z-10 ..."> ... </div> */}
         </>
       )}
-      {/* Global Styles - Add these to a global CSS file or use Tailwind plugins */}
-       <style jsx global>{`
-          @keyframes glow {
-             0% { box-shadow: 0 0 3px #00ffff, inset 0 0 3px #00ffff; }
-             50% { box-shadow: 0 0 10px #00ffff, inset 0 0 10px #00ffff; }
-             100% { box-shadow: 0 0 3px #00ffff, inset 0 0 3px #00ffff; }
-          }
-          .animate-glow {
-             animation: glow 1.8s infinite alternate;
-          }
-          @keyframes scan {
-             0% { top: 0%; opacity: 0.6; }
-             50% { opacity: 1; }
-             100% { top: calc(100% - 3px); opacity: 0.6; }
-          }
-          .animate-scan {
-             animation: scan 2s linear infinite;
-          }
-       `}</style>
+      {/* Global Styles - Can keep these */}
+      {/* <style jsx global>{ ... }</style> */}
     </div>
   );
 }
