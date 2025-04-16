@@ -55,8 +55,8 @@ export default function ARCameraPage() { // Renamed component for clarity
 
     const getCameraStream = async () => {
       setError(null);
-      // Don't set modelLoading here, it's handled separately
       try {
+        console.log("Requesting camera stream...");
         currentStream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             facingMode: "environment",
@@ -65,19 +65,32 @@ export default function ARCameraPage() { // Renamed component for clarity
           },
           audio: false
         });
-        setStream(currentStream);
+        console.log("Stream received:", currentStream);
+        console.log("Active tracks:", currentStream.getTracks().filter(t => t.readyState === 'live'));
+        setStream(currentStream); // Set stream state
+
         if (videoElement) {
+          console.log("Video element found, assigning stream...");
           videoElement.srcObject = currentStream;
-          // Wait for metadata to get dimensions
           videoElement.onloadedmetadata = () => {
+              console.log("Video metadata loaded."); // Log when metadata loads
               setVideoDimensions({
                   width: videoElement.videoWidth,
                   height: videoElement.videoHeight
               });
-              console.log(`Video dimensions: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
+              console.log(`Video dimensions set: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
               // Start detection loop only after model and video are ready
               requestRef.current = requestAnimationFrame(detectObjects);
           };
+          // Explicitly try to play
+          videoElement.play().catch(err => {
+            console.error("Video play failed:", err);
+            setError(`Video playback failed: ${err.message}. Ensure autoplay is allowed.`);
+          });
+          console.log("Attempted to play video.");
+        } else {
+            console.error("Video element ref not available when stream was ready.");
+            setError("Video element not ready.");
         }
       } catch (err) {
         console.error("Error accessing camera:", err);
