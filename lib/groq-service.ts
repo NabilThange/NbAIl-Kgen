@@ -181,7 +181,7 @@ export const getGroqVisionAnalysis = async (
           ],
         },
       ],
-      model: "llama3-groq-70b-8192-tool-use-preview", // Or another suitable vision model available via Groq
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
       // Optional: Add parameters like max_tokens, temperature if needed
       // max_tokens: 150,
     });
