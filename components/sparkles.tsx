@@ -41,8 +41,9 @@ export const SparklesCore = ({
     let particles: Particle[] = []
     let animationFrameId: number
 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    // Set initial canvas size based on element dimensions
+    canvas.width = canvas.clientWidth
+    canvas.height = canvas.clientHeight
 
     class Particle {
       x: number
@@ -115,8 +116,9 @@ export const SparklesCore = ({
     const handleResize = () => {
       if (typeof window === "undefined") return
 
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      // Resize canvas based on element dimensions
+      canvas.width = canvas.clientWidth
+      canvas.height = canvas.clientHeight
       init()
     }
 
