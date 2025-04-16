@@ -51,12 +51,25 @@ export default function ARModePage() {
 
   // Setup camera on mount
   useEffect(() => {
-    setupCamera()
-    // Cleanup stream on unmount
-    return () => {
-      stream?.getTracks().forEach((track) => track.stop())
+    // Only call setupCamera once on mount
+    if (!stream) {
+       setupCamera()
     }
-  }, [setupCamera, stream]) // Re-run if setupCamera changes (it shouldn't) or stream gets cleaned up elsewhere
+    
+    // Cleanup stream on unmount using the stream state variable
+    return () => {
+      // Access the current value of stream state inside the cleanup function
+      setStream(currentStream => {
+        if (currentStream) {
+          console.log("Cleaning up camera stream...")
+          currentStream.getTracks().forEach((track) => track.stop())
+        }
+        return null; // Ensure stream state is reset
+      });
+    }
+  // Remove stream from dependencies, rely on mount/unmount behavior
+  // setupCamera is stable due to useCallback([])
+  }, [setupCamera])
 
   // Function to capture frame
   const captureFrame = useCallback((): string | null => {
@@ -133,7 +146,7 @@ export default function ARModePage() {
       </header>
 
       {/* Camera View */} 
-      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+      <div className="flex-1 relative bg-black"> {/* Ensure container has a background */} 
         {error ? (
           <div className="text-center p-4 bg-red-900/50 rounded-lg max-w-sm mx-auto z-10">
             <AlertTriangle className="h-8 w-8 text-red-400 mx-auto mb-2" />
@@ -149,10 +162,12 @@ export default function ARModePage() {
             ref={videoRef}
             autoPlay
             playsInline
-            muted // Mute to avoid feedback loop if mic is used later
-            className={`w-full h-full object-cover ${stream ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+            muted 
+            // Use absolute positioning to fill the container more reliably
+            className={`absolute inset-0 w-full h-full object-cover ${stream ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`} 
           />
         )}
+         {/* Loading overlay */} 
          {!stream && !error && (
             <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
