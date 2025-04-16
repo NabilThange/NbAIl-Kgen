@@ -585,20 +585,14 @@ Generate a 5–7 word spoken summary suitable for text-to-speech (TTS)
       <main className="flex-1 overflow-y-auto px-4 pt-16 pb-0 md:px-6 md:pt-16 md:pb-0 relative z-10">
         <div className="max-w-3xl mx-auto space-y-6">
           {messages.length === 0 ? (
-            // Replace the empty chat message with the Spline viewer
-            <div className="flex flex-col items-center justify-center min-h-[60vh] md:min-h-[calc(100vh-200px)]">
-              {/* Spline Viewer Embed */}
+            // Replace the empty chat message with the Spline viewer - Now Responsive
+            <div className="flex flex-col items-center justify-center min-h-[60vh] md:min-h-[calc(100vh-200px)] py-12">
+              {/* Spline Viewer Embed - Using Tailwind for responsiveness */}
               <spline-viewer
                 url="https://prod.spline.design/qCEGpu69o0sy21p3/scene.splinecode"
-                style={{
-                  width: '100%',
-                  height: '600px', // Increased height
-                  maxHeight: '80vh', // Increased max height
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  margin: 'auto', // Center horizontally
-                }}
-              >{/* REMOVE ts-ignore */}</spline-viewer>
+                className="w-full h-[50vh] md:w-[600px] md:h-[600px] md:max-h-[80vh] rounded-xl overflow-hidden"
+              >
+              </spline-viewer>
             </div>
           ) : (
             messages.map((message) => (
