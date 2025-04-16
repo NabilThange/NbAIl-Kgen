@@ -634,11 +634,11 @@ a:active {
   width: auto; /* Let padding determine width */
   min-width: 8.8em; /* Reduced min-width */
   height: 44px; /* Explicit height */
-  padding: 0 22px; /* Reduced padding */
+  padding: 0.75rem 1.5rem; /* Added padding */
   border: #8b5cf6 2px solid; /* Adjusted border thickness */
-  border-radius: 8px; /* Match starburst radius *
+  border-radius: 8px; /* Match starburst radius */
   transition: all 0.6s ease;
-  display: inline-flex; /* Use inline-flex 
+  display: inline-flex; /* Use inline-flex */
   align-items: center; /* Center items vertically */
   justify-content: center; /* Center items horizontally */
   gap: 8px; /* Add gap between icon and text */
@@ -649,7 +649,6 @@ a:active {
 
 .arrow-button:hover {
   background-color: #8b5cf6; /* Changed hover background */
-  cursor: pointer;
 }
 
 .arrow-button svg {

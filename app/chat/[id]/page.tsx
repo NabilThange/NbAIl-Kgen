@@ -335,7 +335,7 @@ export default function ChatPage() {
       </div>
 
       {/* Chat messages */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 relative z-10">
+      <main className="flex-1 overflow-y-auto px-4 pt-16 pb-0 md:px-6 md:pt-16 md:pb-0 relative z-10">
         <div className="max-w-3xl mx-auto space-y-6">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full min-h-[50vh]">
@@ -442,7 +442,7 @@ export default function ChatPage() {
 
           <div ref={messagesEndRef} />
         </div>
-      </div>
+      </main>
 
       {/* File Picker Modal */}
       {isFilePickerOpen && (

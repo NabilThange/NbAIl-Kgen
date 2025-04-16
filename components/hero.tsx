@@ -19,16 +19,19 @@ export default function Hero() {
   const [particleStyles, setParticleStyles] = useState<ParticleStyle[]>([])
 
   useEffect(() => {
-    const styles = Array.from({ length: 20 }).map(() => ({
-      width: Math.random() * 40 + 10,
-      height: Math.random() * 40 + 10,
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      duration: Math.random() * 5 + 5,
-      delay: Math.random() * 5,
-    }))
-    setParticleStyles(styles)
-  }, []) // Empty dependency array ensures this runs only once on mount
+    const styles = Array.from({ length: 20 }).map(() => {
+      const size = Math.random() * 40 + 10; // Generate a single size
+      return {
+        width: size, // Use the same size for width and height
+        height: size,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        duration: Math.random() * 5 + 5,
+        delay: Math.random() * 5,
+      };
+    });
+    setParticleStyles(styles);
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   return (
     <div className="relative pt-36 pb-32 md:pt-52 md:pb-44">
@@ -41,10 +44,9 @@ export default function Hero() {
           {particleStyles.map((style, i) => (
             <motion.div
               key={i}
-              className="absolute rounded-full bg-purple-500/20"
+              className="absolute rounded-full bg-purple-500/20 aspect-square"
               style={{
                 width: style.width,
-                height: style.height,
                 left: style.left,
                 top: style.top,
               }}

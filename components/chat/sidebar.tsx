@@ -426,14 +426,14 @@ function ChatItem({
       )}
 
       {!isRenaming && (
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex">
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 text-white">
+            <DropdownMenuContent side="right" align="start" sideOffset={5} className="bg-gray-800 border-gray-700 text-white">
               <DropdownMenuItem onClick={onRenameClick} className="cursor-pointer">
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Rename</span>
