@@ -138,4 +138,70 @@ export const getGroqVisionCompletion = async (userPrompt: string, imageBase64: s
     }
     return "Sorry, there was an error processing the image.";
   }
+};
+
+// Specific function for AR mode or general vision queries
+export const getGroqVisionAnalysis = async (
+  base64ImageData: string, // Expecting data URL like "data:image/jpeg;base64,..."
+  prompt: string,
+) => {
+  if (!process.env.NEXT_PUBLIC_GROQ_API_KEY) {
+    throw new Error("Groq API key not configured.");
+  }
+  if (!base64ImageData || !base64ImageData.startsWith("data:image")) {
+      throw new Error("Invalid image data provided.");
+  }
+
+  // Extract base64 content and determine MIME type
+  const mimeType = base64ImageData.substring(base64ImageData.indexOf(":") + 1, base64ImageData.indexOf(";"));
+  const base64Content = base64ImageData.substring(base64ImageData.indexOf(",") + 1);
+
+  console.log(`Sending to Groq Vision: Prompt - "${prompt}", MimeType - ${mimeType}, Size approx ${Math.round(base64Content.length * 3/4 / 1024)} KB`);
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an AI assistant with vision capabilities designed for AR Mode. Analyze the provided image based on the user's query and provide a concise, informative response.",
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: base64ImageData, // Send the full data URL
+              },
+            },
+            {
+              type: "text",
+              text: prompt,
+            },
+          ],
+        },
+      ],
+      model: "llama3-groq-70b-8192-tool-use-preview", // Or another suitable vision model available via Groq
+      // Optional: Add parameters like max_tokens, temperature if needed
+      // max_tokens: 150,
+    });
+
+    const responseContent = completion.choices[0]?.message?.content;
+    console.log("Groq Vision API Response:", responseContent);
+
+    if (!responseContent) {
+      throw new Error("Received an empty response from Groq Vision API.");
+    }
+
+    return responseContent;
+
+  } catch (error) {
+    console.error("Error calling Groq Vision API:", error);
+    // Rethrow or handle appropriately
+    if (error instanceof Error) {
+       throw new Error(`Groq Vision API Error: ${error.message}`);
+    } else {
+       throw new Error("An unknown error occurred while contacting Groq Vision API.");
+    }
+  }
 }; 
