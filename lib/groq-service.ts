@@ -163,7 +163,7 @@ export const getGroqVisionAnalysis = async (
       messages: [
         {
           role: "system",
-          content: "You are an AI assistant with vision capabilities designed for AR Mode. Analyze the provided image based on the user's query and provide a concise, informative response.",
+          content: "You are a vision-enabled AI assistant built for AR Mode. Analyze the provided image in the context of the user's query. Respond clearly and concisely, highlighting the most relevant visual details. Prioritize accuracy and usefulness.",
         },
         {
           role: "user",

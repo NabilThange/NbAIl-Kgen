@@ -98,7 +98,59 @@ export default function ARModePage() {
     setIsAnalyzing(true);
     setError(null);
 
-    const prompt = query || "Describe what you see in this image.";
+    // Use the detailed AR prompt if no specific query is provided
+    const prompt = query || `> You are an intelligent AR assistant analyzing a real-time live camera feed. Your task is to break down the scene with maximum clarity and structure so it can be used immediately for AR overlays, scanning effects, voice interaction, and object-based responses.
+>
+> ⚠️ Structure your answer with clearly labeled sections, keep it precise and AR-friendly. Respond in bullet points and short paragraphs — suitable for use in an AR UI.
+
+---
+
+**1. 🔍 Environment Context**  
+- Is the scene indoors or outdoors?  
+- Describe lighting, weather (if visible), and overall ambiance.  
+- Mention any visible floor/wall/sky/ground type.
+
+**2. 📦 Detected Objects & Surfaces**  
+- List each visible object (real-world items, devices, props, etc.)  
+- For each object: name, color, size (approx.), and location (left/right/center/top/bottom)  
+- If text is detected, show it and its meaning.
+
+**3. 🧑‍🤝‍🧑 Human Presence & Behavior (if any)**  
+- Number of people, position, posture (standing, sitting, walking, etc.)  
+- Describe visible actions or gestures (e.g., pointing, holding something)  
+- Clothing type or standout features
+
+**4. 💻 Devices & Tech (if present)**  
+- Identify any visible tech: phones, screens, cameras, etc.  
+- Is the screen on? Any visible UI or brand?
+
+**5. 🌱 Natural Elements**  
+- Trees, plants, animals, sky, water, terrain, etc.  
+- Realism level: realistic, stylized, artificial?
+
+**6. 🧠 Focus Area (What Stands Out Most)**  
+- What seems to be the central subject or point of interest?  
+- Describe in 1 sentence what draws attention most
+
+**7. 🧩 Spatial Awareness & Depth**  
+- Distance between objects if clear  
+- Mention any layering or foreground/background separation  
+- Relative placement (e.g., "The lamp is next to the table on the left")
+
+**8. 🧾 Voice Output Summary**  
+- Generate a **5-word** voice summary (highlighting the main object or action)  
+- This will be spoken by the assistant immediately
+
+**9. 🪟 AR Overlay Suggestions**  
+- For each key object or person:
+  - Bounding box placement
+  - Label text (e.g., "MacBook Pro", "Person: Standing")
+  - Optional scanning animation (circle, pulse, glow, etc.)
+- Suggest if anything should be highlighted, pulsed, or animated
+
+**10. 📤 Actionable Info / User Guidance (Optional)**  
+- What can the user ask or interact with next?  
+- Suggest 1–2 voice questions user might ask based on the scene.`;
 
     try {
       const response = await getGroqVisionCompletion(prompt, imageBase64, 'image/jpeg');

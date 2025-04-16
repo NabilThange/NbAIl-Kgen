@@ -152,8 +152,8 @@ export default function Hero() {
             <Link href="#features">
               {/* From Uiverse.io by reshades */}
               <button className="arrow-button">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="w-6 h-6">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"></path>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"></path>
                 </svg>
                 <div className="text">
                   Learn More
@@ -178,15 +178,14 @@ export default function Hero() {
                 <div className="w-3 h-3 rounded-full bg-green-500" />
               </div>
             </div>
-            {/* Replace with placeholder.svg using next/image */}
-            <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gray-900 flex items-center justify-center">
-              <Image
-                src="/placeholder.svg"
-                alt="NbAIl AI Assistant"
-                fill={true}
-                className="object-cover"
-                priority
-              />
+            <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gray-900 flex items-center justify-center overflow-hidden rounded-b-xl">
+              <spline-viewer
+                loading-anim-type="none"
+                url="https://prod.spline.design/ygyeQTRpiCESn5yD/scene.splinecode"
+                style={{ width: '100%', height: '100%' }}
+              >
+                <p>Loading Spline scene...</p>
+              </spline-viewer>
             </div>
           </div>
 
@@ -194,6 +193,10 @@ export default function Hero() {
           <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur-xl opacity-20 -z-10" />
         </motion.div>
       </div>
+
+      {/* Load Spline Viewer Script */}
+      {/* <Script src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js" strategy="afterInteractive" async /> */}
+      <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
     </div>
   )
 }

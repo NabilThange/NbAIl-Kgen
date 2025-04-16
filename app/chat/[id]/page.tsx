@@ -153,7 +153,59 @@ export default function ChatPage() {
       // --- Check if it's an image submission ---
       if (currentImageFile && currentImageBase64) {
         assistantResponse = await getGroqVisionCompletion(
-          currentInput || "Describe this image.", // Use input or default prompt
+          currentInput || `You are an intelligent visual AI assistant. The user has uploaded an image (JPG/PNG) which may include books, handwritten or printed pages, documents, or general objects.
+
+Your task is to analyze and describe the image in a well-structured, informative, and detailed way — section by section — as if helping someone understand the image visually and contextually.
+
+Follow the format below. Be accurate, concise, and organized. If an element is missing from the image, simply skip that section.
+
+📄 1. Document Type & Layout
+What type of material is it? (e.g., printed page, notebook paper, form, textbook)
+
+Describe layout: single column, multiple sections, handwritten vs. printed
+
+Orientation (portrait, landscape, tilted)
+
+🔠 2. Visible Text & Content
+Extract and summarize key visible text
+
+Identify:
+
+Title or heading (if any)
+
+Subheadings or sections
+
+Important keywords or highlighted lines
+
+Mention the font style (e.g., serif, sans-serif, handwritten) and size if distinguishable
+
+🖊️ 3. Handwriting / Notes (if applicable)
+Is there handwriting? Describe the style (e.g., cursive, block letters)
+
+Mention location on page (top margin, side notes, bottom)
+
+Highlight any symbols, underlines, or sketches
+
+📚 4. Book/Page Context (if applicable)
+If it's a book: detect page number, chapter title, or layout
+
+Mention whether it's a textbook, storybook, research paper, etc.
+
+🧩 5. Other Elements in Image
+Are there objects in the background or foreground?
+
+Is a table, hand, pen, phone, or surface visible?
+
+Briefly describe anything unusual or interesting
+
+🧠 6. Summary Description
+In 2–3 sentences, summarize what this image most likely is and what information it contains
+
+Include the most notable visual elements
+
+🔊 7. Voice Output (if needed)
+Generate a 5–7 word spoken summary suitable for text-to-speech (TTS)
+`,
           currentImageBase64,
           currentImageFile.type
         )
