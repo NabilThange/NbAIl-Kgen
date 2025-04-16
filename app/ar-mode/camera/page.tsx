@@ -1,62 +1,30 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Loader2, Sparkles, Eye } from 'lucide-react'; // Replaced Camera/Mic with Eye
+import { Camera, X, Loader2, Sparkles } from 'lucide-react'; // Restore Camera icon
 import { Button } from '@/components/ui/button';
-// Import TensorFlow.js and COCO-SSD model
-import * as tf from '@tensorflow/tfjs';
-import * as cocoSsd from '@tensorflow-models/coco-ssd';
+import { getGroqVisionCompletion } from '@/lib/groq-service';
 
-// Define type for detected objects
-interface Detection { 
-  bbox: [number, number, number, number]; // [x, y, width, height]
-  class: string;
-  score: number;
-}
-
-export default function ARCameraPage() { // Renamed component for clarity
+export default function ARCameraPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const requestRef = useRef<number>();
-  const modelRef = useRef<cocoSsd.ObjectDetection>();
-
+  const canvasRef = useRef<HTMLCanvasElement>(null); // Restore canvasRef
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [modelLoading, setModelLoading] = useState<boolean>(true); // Renamed isLoading
-  const [detections, setDetections] = useState<Detection[]>([]);
-  const [videoDimensions, setVideoDimensions] = useState<{width: number, height: number} | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // For initial camera loading
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false); // For AI analysis
+  const [lastResponse, setLastResponse] = useState<string | null>(null);
 
-  // Load COCO-SSD model
-  useEffect(() => {
-    const loadModel = async () => {
-      setModelLoading(true);
-      setError(null);
-      try {
-        await tf.ready(); // Ensure TF.js backend is ready
-        console.log("TensorFlow.js backend ready.");
-        modelRef.current = await cocoSsd.load();
-        console.log("COCO-SSD model loaded.");
-      } catch (err) {
-        console.error("Error loading COCO-SSD model:", err);
-        setError("Failed to load object detection model.");
-        modelRef.current = undefined; // Explicitly set to undefined on error
-      } finally {
-        setModelLoading(false);
-      }
-    };
-    loadModel();
-  }, []);
-
-  // Request camera access and get dimensions
+  // Request camera access
   useEffect(() => {
     let currentStream: MediaStream | null = null;
-    // We will access videoRef.current inside getCameraStream
 
     const getCameraStream = async () => {
       setError(null);
+      setIsLoading(true);
       try {
-        console.log("Requesting camera stream...");
+        console.log("Requesting camera stream (single-frame mode)...");
         currentStream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             facingMode: "environment",
@@ -65,37 +33,20 @@ export default function ARCameraPage() { // Renamed component for clarity
           },
           audio: false
         });
-        console.log("Stream received:", currentStream);
-        setStream(currentStream); // Set stream state FIRST
+        setStream(currentStream);
 
-        // Now, access videoRef.current AFTER stream is confirmed
         const videoElement = videoRef.current;
         if (videoElement) {
-          console.log("Video element ref available, assigning stream...");
           videoElement.srcObject = currentStream;
-          videoElement.onloadedmetadata = () => {
-            console.log("Video metadata loaded.");
-            setVideoDimensions({
-              width: videoElement.videoWidth,
-              height: videoElement.videoHeight
-            });
-            console.log(`Video dimensions set: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
-            // Start detection loop only after model and video are ready
-            requestRef.current = requestAnimationFrame(detectObjects);
-          };
+          // No need for onloadedmetadata for single frame capture
           videoElement.play().catch(err => {
             console.error("Video play failed:", err);
             setError(`Video playback failed: ${err.message}. Ensure autoplay is allowed.`);
           });
-          console.log("Attempted to play video.");
         } else {
-          console.error("Video element ref was null/undefined AFTER stream was ready.");
-          setError("Video element failed to mount in time.");
-          // Stop the stream if we can't assign it
-          currentStream.getTracks().forEach(track => track.stop());
-          setStream(null);
+          setError("Video element failed to mount.");
         }
-      } catch (err) {
+      } catch (err) { // Keep existing detailed error handling
         console.error("Error accessing camera:", err);
         if (err instanceof Error) {
           if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
@@ -109,6 +60,8 @@ export default function ARCameraPage() { // Renamed component for clarity
            setError("An unknown error occurred while accessing the camera.");
         }
         setStream(null);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -116,65 +69,67 @@ export default function ARCameraPage() { // Renamed component for clarity
 
     // Cleanup function
     return () => {
-      console.log("Cleanup effect running...") // Add log for cleanup
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current);
-      }
-      // Ensure we only stop tracks if currentStream was assigned
-      if (currentStream) { 
-        currentStream.getTracks().forEach(track => {
-          console.log("Stopping track:", track.label)
-          track.stop()
-        });
-        console.log("Camera stream stopped via cleanup.");
-      }
-      // Also try stopping via videoRef if srcObject was set
-      if (videoRef.current && videoRef.current.srcObject) {
-         const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-         tracks.forEach(track => {
-            console.log("Stopping track via videoRef:", track.label)
-            track.stop()
-         });
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        console.log("Camera stream stopped.");
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Keep empty dependency array
-
-  // Detection loop function
-  const detectObjects = useCallback(async () => {
-    if (videoRef.current && videoRef.current.readyState === 4 && modelRef.current && !modelLoading) {
-      try {
-        const predictions = await modelRef.current.detect(videoRef.current);
-        setDetections(predictions);
-      } catch (error) {
-        console.error("Error during detection:", error);
-        // Optionally set an error state here
-      }
-    }
-    // Continue the loop
-    requestRef.current = requestAnimationFrame(detectObjects);
-  }, [modelLoading]); // Re-run if modelLoading changes (though loop starts after loading)
+  }, []); // Empty dependency array
 
   const handleClose = () => {
     router.back();
   };
-  
-  // Calculate scale factors if video element dimensions differ from display dimensions
-  const scaleX = videoRef.current ? videoRef.current.clientWidth / (videoDimensions?.width || 1) : 1;
-  const scaleY = videoRef.current ? videoRef.current.clientHeight / (videoDimensions?.height || 1) : 1;
+
+  // Re-implement single-frame capture logic
+  const handleCapture = async (query?: string) => {
+    if (!videoRef.current || !canvasRef.current) {
+      setError("Video or canvas element not available.");
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext('2d');
+    if (!context) {
+        setError("Could not get canvas context.");
+        return;
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageBase64 = canvas.toDataURL('image/jpeg', 0.9);
+    
+    setLastResponse(null);
+    setIsAnalyzing(true);
+    setError(null);
+
+    const prompt = query || "Describe what you see in this image.";
+
+    try {
+      console.log("Sending image to Groq Vision (single-frame mode)...");
+      const response = await getGroqVisionCompletion(prompt, imageBase64, 'image/jpeg');
+      setLastResponse(response || "Couldn't generate a description.");
+    } catch (err) {
+      console.error("Error analyzing image:", err);
+      setError(err instanceof Error ? `Analysis failed: ${err.message}` : "Unknown analysis error.");
+      setLastResponse(null);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center text-white overflow-hidden">
-      {/* Model Loading State */}
-      {modelLoading && (
+      {/* Initial Loading State */}
+      {isLoading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30">
            <Loader2 className="h-10 w-10 animate-spin text-purple-500 mb-4" />
-           <p className="text-lg">Loading AI Model...</p>
+           <p className="text-lg">Starting Camera...</p>
         </div>
       )}
 
       {/* Error State */}
-      {error && (
+      {error && !isLoading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/80 z-30 p-8 text-center">
           <h2 className="text-2xl font-bold mb-4">Error</h2>
           <p className="text-lg mb-6">{error}</p>
@@ -184,41 +139,67 @@ export default function ARCameraPage() { // Renamed component for clarity
         </div>
       )}
       
-      {/* Camera View & Detections (only if stream and model are ready) */}
-      {stream && !modelLoading && !error && (
+      {/* Camera View & Controls */}
+      {stream && !isLoading && !error && (
         <>
-          {/* Video Feed Container (for positioning context) */}
-          <div className="relative w-full h-full flex items-center justify-center">
-             <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="max-w-full max-h-full object-contain border-4 border-red-500" // Added red border for visibility
-             />
-             {/* Detection Overlays - Temporarily commented out */}
-             {/* {detections.map((detection, index) => { ... })} */}
-          </div>
+          {/* Video Feed */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute top-0 left-0 w-full h-full object-cover z-0" // Use cover again
+          />
+          {/* Hidden Canvas */}
+          <canvas ref={canvasRef} style={{ display: 'none' }} /> 
 
-          {/* Top Bar - Kept for closing */}
-          <div className="absolute top-0 right-0 z-10 p-4 md:p-6">
-             <Button
+          {/* Overlay UI */}
+          <div className="absolute inset-0 z-10 flex flex-col justify-between p-4 md:p-6 pointer-events-none">
+            {/* Top Bar */}
+            <div className="flex justify-end pointer-events-auto">
+              <Button
                 variant="ghost"
                 size="icon"
                 className="rounded-full bg-black/50 hover:bg-black/70 text-white"
                 onClick={handleClose}
                 aria-label="Close AR Mode"
-             >
+              >
                 <X className="h-6 w-6" />
-             </Button>
-          </div>
+              </Button>
+            </div>
 
-          {/* Detection Count - Temporarily commented out */}
-          {/* <div className="absolute bottom-4 left-4 z-10 ..."> ... </div> */}
+            {/* Response Area */}
+            {lastResponse && (
+                <div className="bg-black/70 backdrop-blur-sm p-4 rounded-lg max-w-lg mx-auto text-center mb-4 pointer-events-auto shadow-lg">
+                    <p>{lastResponse}</p>
+                </div>
+            )}
+
+            {/* Bottom Bar - Restore Capture Button */}
+            <div className="flex justify-center items-center space-x-4 pointer-events-auto">
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full bg-black/50 hover:bg-black/70 text-white w-16 h-16 border-2 border-white shadow-xl"
+                onClick={() => handleCapture()}
+                aria-label="Capture Image"
+                disabled={isAnalyzing}
+              >
+                 {isAnalyzing ? <Loader2 className="h-7 w-7 animate-spin" /> : <Camera className="h-7 w-7" />}
+              </Button>
+            </div>
+          </div>
+          
+          {/* Analysis Loading Overlay */}
+          {isAnalyzing && (
+             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center text-center p-4">
+                <Sparkles className="h-12 w-12 text-purple-400 mb-4 animate-pulse" />
+                <p className="text-xl font-medium">NbAIl is analyzing...</p>
+             </div>
+          )}
         </>
       )}
-      {/* Global Styles - Can keep these */}
-      {/* <style jsx global>{ ... }</style> */}
+      {/* Remove global styles related to detection */}
     </div>
   );
 }
