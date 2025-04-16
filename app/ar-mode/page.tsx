@@ -19,14 +19,12 @@ export default function ARModePage() {
   const [aiResponse, setAiResponse] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [userQuery, setUserQuery] = useState("Describe what you see in detail.")
-  const [isVoiceRecording, setIsVoiceRecording] = useState(false)
+  const [isMicListening, setIsMicListening] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const SILENCE_THRESHOLD = 1200
 
   // Function to setup camera
   const setupCamera = useCallback(async () => {
@@ -140,57 +138,56 @@ export default function ARModePage() {
     }
   }, [captureFrame])
 
-  // --- Voice Input Recording Logic ---
-  const startVoiceRecording = async () => {
-    if (isVoiceRecording || typeof navigator === 'undefined' || !navigator.mediaDevices) {
-      console.warn("Media devices not available or already recording.")
+  // --- Microphone Toggle Logic ---
+  const handleMicToggle = () => {
+    if (isMicListening) {
+      stopMicListener();
+    } else {
+      startMicListener();
+    }
+  }
+
+  // --- Start Mic Listener ---
+  const startMicListener = async () => {
+    if (isMicListening || typeof navigator === 'undefined' || !navigator.mediaDevices) {
+      console.warn("Media devices not available or already listening.")
       return
     }
     setError(null)
     setAiResponse(null)
     setStatusMessage("Listening...")
-    console.log("Starting voice recording...")
+    console.log("Starting microphone listener...")
 
     try {
-      // Request audio permission separately if needed, or rely on existing stream? 
-      // For simplicity, let's assume we need a new audio stream context here.
       const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
       
       mediaRecorderRef.current = new MediaRecorder(audioStream)
       audioChunksRef.current = []
-      setIsVoiceRecording(true)
+      setIsMicListening(true) // Set listening state
       setIsSpeaking(false)
       setIsTranscribing(false)
-
-      const resetSilenceTimer = () => {
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-        silenceTimerRef.current = setTimeout(() => {
-          if (mediaRecorderRef.current?.state === "recording") {
-            console.log("Silence detected, stopping voice recording.")
-            mediaRecorderRef.current.stop()
-          }
-        }, SILENCE_THRESHOLD)
-      }
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data)
-          resetSilenceTimer() 
         }
       }
 
       mediaRecorderRef.current.onstop = async () => {
-        console.log("Voice recording stopped.")
-        setIsVoiceRecording(false)
+        console.log("Mic listener stopped manually.")
+        // Reset listening state *before* processing
+        setIsMicListening(false)
         setStatusMessage("Transcribing...")
         setIsTranscribing(true)
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
 
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        const recordedChunks = [...audioChunksRef.current] // Copy chunks before clearing
         audioChunksRef.current = [] // Clear chunks immediately
-        audioStream.getTracks().forEach(track => track.stop()) // Stop the audio stream tracks
+        
+        // Stop the tracks *after* creating the Blob
+        audioStream.getTracks().forEach(track => track.stop())
 
-        if (audioBlob.size === 0) {
+        if (recordedChunks.length === 0 || audioBlob.size === 0) {
           console.warn("Empty audio recorded.")
           setStatusMessage(null)
           setIsTranscribing(false)
@@ -221,15 +218,26 @@ export default function ARModePage() {
         }
       }
 
-      mediaRecorderRef.current.start(500)
-      resetSilenceTimer()
-      console.log("Voice recording started.")
+      mediaRecorderRef.current.start(500) // Collect data in chunks
+      console.log("Microphone listener started.")
 
     } catch (err) {
       console.error("Error accessing microphone:", err)
       alert("Could not access microphone. Please check permissions.")
       setStatusMessage(null)
-      setIsVoiceRecording(false)
+      setIsMicListening(false)
+    }
+  }
+
+  // --- Stop Mic Listener (Manual) ---
+  const stopMicListener = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      console.log("Manually stopping mic listener...")
+      mediaRecorderRef.current.stop() // This triggers the onstop handler
+    } else {
+      console.log("Mic listener was not recording.")
+      setIsMicListening(false) // Ensure state is reset if somehow it wasn't recording
+      setStatusMessage(null)
     }
   }
 
@@ -335,7 +343,8 @@ export default function ARModePage() {
               className="absolute inset-x-0 top-16 flex justify-center z-30"
             >
               <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm flex items-center space-x-2">
-                {isVoiceRecording && <Mic className="h-4 w-4 text-purple-400 animate-pulse" />} 
+                {/* Update icon based on isMicListening */} 
+                {isMicListening && <Mic className="h-4 w-4 text-red-500 animate-pulse" />} 
                 {isTranscribing && <Loader2 className="h-4 w-4 animate-spin" />} 
                 {isAnalyzing && !isSpeaking && <Loader2 className="h-4 w-4 animate-spin" />} 
                 {isSpeaking && <Volume2 className="h-4 w-4 text-green-400 animate-pulse" />}
@@ -376,28 +385,35 @@ export default function ARModePage() {
          <Button
            size="lg"
            onClick={handleAnalyzeImage}
-           disabled={!stream || isAnalyzing || isVoiceRecording || isTranscribing || isSpeaking || !!error}
+           // Update disabled state based on isMicListening
+           disabled={!stream || isAnalyzing || isMicListening || isTranscribing || isSpeaking || !!error}
            className="group rounded-full w-16 h-16 p-0 bg-white/20 hover:bg-white/30 border border-white/30 text-white disabled:opacity-50 transition-all duration-200 relative shadow-lg hover:shadow-purple-500/30 hover:border-purple-400"
            aria-label="Analyze Image"
          >
-           {isAnalyzing && !isVoiceRecording && !isTranscribing && !isSpeaking ? (
+           {isAnalyzing && !isMicListening && !isTranscribing && !isSpeaking ? (
              <Loader2 className="h-6 w-6 animate-spin" />
            ) : (
              <>
                <Camera className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
-               {/* Static Glow effect on hover potentially via group-hover:shadow-glow */}
-               <span className={`absolute inset-0 rounded-full border-2 ${!isAnalyzing && !isVoiceRecording ? 'border-white/50 group-hover:border-purple-400 animate-pulse' : 'border-transparent'}`}></span>
+               {/* Adjust pulse condition */}
+               <span className={`absolute inset-0 rounded-full border-2 ${!isAnalyzing && !isMicListening ? 'border-white/50 group-hover:border-purple-400 animate-pulse' : 'border-transparent'}`}></span>
              </>
            )}
          </Button>
 
-         {/* Voice Input Button */} 
+         {/* Voice Input Toggle Button */} 
          <Button
            size="lg"
-           onClick={startVoiceRecording}
-           disabled={!stream || isAnalyzing || isVoiceRecording || isTranscribing || isSpeaking || !!error}
-           className={`group rounded-full w-16 h-16 p-0 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/50 text-purple-300 hover:text-white disabled:opacity-50 transition-all duration-200 relative shadow-lg hover:shadow-purple-500/50 ${isVoiceRecording ? 'bg-red-600/50 border-red-500/70 animate-pulse' : 'hover:scale-105 active:scale-95'}`}
-           aria-label="Ask about view"
+           onClick={handleMicToggle} // Use the toggle handler
+           // Disable only when analyzing/transcribing/speaking or error/no stream
+           disabled={!stream || isAnalyzing || isTranscribing || isSpeaking || !!error}
+           // Change style based on isMicListening
+           className={`group rounded-full w-16 h-16 p-0 border transition-all duration-200 relative shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 ${ 
+             isMicListening 
+               ? 'bg-red-600/50 border-red-500/70 text-white animate-pulse' 
+               : 'bg-purple-600/30 hover:bg-purple-600/50 border-purple-500/50 text-purple-300 hover:text-white'
+           }`}
+           aria-label={isMicListening ? "Stop Listening" : "Start Listening"}
          >
            {isTranscribing ? (
              <Loader2 className="h-6 w-6 animate-spin" />
@@ -405,7 +421,7 @@ export default function ARModePage() {
              <Mic className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
            )}
            {/* Pulsing effect when idle and enabled */}
-           {!isAnalyzing && !isVoiceRecording && !isTranscribing && !isSpeaking && !error && stream && (
+           {!isAnalyzing && !isMicListening && !isTranscribing && !isSpeaking && !error && stream && (
                <span className="absolute inset-0 rounded-full border-2 border-purple-500/80 animate-pulse group-hover:border-white/50"></span>
            )}
          </Button>
