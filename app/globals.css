@@ -820,3 +820,39 @@ a:active {
   color: var(--font-color);
   cursor: pointer;
 }
+
+/* Add CSS for new camera button */
+.button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 9px 12px;
+  gap: 8px;
+  height: 40px;
+  width: 172px;
+  border: none;
+  background: #FF2849;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.lable {
+  line-height: 22px;
+  font-size: 17px;
+  color: #fff;
+  font-family: sans-serif;
+  letter-spacing: 1px;
+}
+
+.button:hover {
+  background: #e52441;
+}
+
+.button:hover .svg-icon {
+  animation: flickering 2s linear infinite;
+}
+
+@keyframes flickering {
+  0%, 50%, 52%, 56%, 90%, 94%, 98%, 100% { opacity: 1; }
+  54%, 92%, 96%, 99% { opacity: 0; }
+}
