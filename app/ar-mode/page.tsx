@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Camera, Mic, Loader2, AlertTriangle, Volume2, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 // Import the new service function
-import { getGroqVisionAnalysis } from "@/lib/groq-service"
-// We might need TTS later
-// import { speakText } from '@/lib/tts-service'; // Assuming TTS logic is extracted
+import { getGroqVisionAnalysis, getGroqTranscription } from "@/lib/groq-service"
+import { speakText } from "@/lib/tts-service"
 
 export default function ARModePage() {
   const router = useRouter()
@@ -19,7 +18,15 @@ export default function ARModePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [userQuery, setUserQuery] = useState("Describe what you see in detail.") // Default prompt
+  const [userQuery, setUserQuery] = useState("Describe what you see in detail.")
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const SILENCE_THRESHOLD = 1200
 
   // Function to setup camera
   const setupCamera = useCallback(async () => {
@@ -98,7 +105,8 @@ export default function ARModePage() {
   }, [])
 
   // Function to handle analysis
-  const handleAnalyze = useCallback(async () => {
+  const handleAnalyzeImage = useCallback(async () => {
+    setStatusMessage("Capturing image...")
     setIsAnalyzing(true)
     setAiResponse(null)
     setError(null)
@@ -106,27 +114,170 @@ export default function ARModePage() {
 
     if (!imageDataUrl) {
       setIsAnalyzing(false)
+      setStatusMessage(null)
       setError("Could not capture frame for analysis.")
       return
     }
 
-    console.log("Frame captured, sending to analysis...")
+    setStatusMessage("Analyzing image...")
+    console.log("Frame captured, sending for analysis...")
 
     try {
-      // Use the actual API call
-      const response = await getGroqVisionAnalysis(imageDataUrl, userQuery)
+      // Use the default query when only image is captured
+      const response = await getGroqVisionAnalysis(imageDataUrl, "Describe what you see in detail.")
       setAiResponse(response)
+      setStatusMessage(null) // Clear status on success
       // Optionally speak the response
-      // speakText(response);
+      // speakText(response, () => setIsSpeaking(true), () => setIsSpeaking(false), (err) => console.error(err));
 
     } catch (err) {
       console.error("Error analyzing image:", err)
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during analysis."
       setError(`Analysis failed: ${errorMessage}`)
+      setStatusMessage(null)
     } finally {
       setIsAnalyzing(false)
     }
-  }, [captureFrame, userQuery]) // Add userQuery dependency
+  }, [captureFrame])
+
+  // --- Voice Input Recording Logic ---
+  const startVoiceRecording = async () => {
+    if (isVoiceRecording || typeof navigator === 'undefined' || !navigator.mediaDevices) {
+      console.warn("Media devices not available or already recording.")
+      return
+    }
+    setError(null)
+    setAiResponse(null)
+    setStatusMessage("Listening...")
+    console.log("Starting voice recording...")
+
+    try {
+      // Request audio permission separately if needed, or rely on existing stream? 
+      // For simplicity, let's assume we need a new audio stream context here.
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      
+      mediaRecorderRef.current = new MediaRecorder(audioStream)
+      audioChunksRef.current = []
+      setIsVoiceRecording(true)
+      setIsSpeaking(false)
+      setIsTranscribing(false)
+
+      const resetSilenceTimer = () => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+        silenceTimerRef.current = setTimeout(() => {
+          if (mediaRecorderRef.current?.state === "recording") {
+            console.log("Silence detected, stopping voice recording.")
+            mediaRecorderRef.current.stop()
+          }
+        }, SILENCE_THRESHOLD)
+      }
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+          resetSilenceTimer() 
+        }
+      }
+
+      mediaRecorderRef.current.onstop = async () => {
+        console.log("Voice recording stopped.")
+        setIsVoiceRecording(false)
+        setStatusMessage("Transcribing...")
+        setIsTranscribing(true)
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        audioChunksRef.current = [] // Clear chunks immediately
+        audioStream.getTracks().forEach(track => track.stop()) // Stop the audio stream tracks
+
+        if (audioBlob.size === 0) {
+          console.warn("Empty audio recorded.")
+          setStatusMessage(null)
+          setIsTranscribing(false)
+          setError("Couldn't hear anything. Please try speaking again.")
+          return
+        }
+
+        try {
+          const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" })
+          const transcription = await getGroqTranscription(audioFile)
+          console.log("Transcription:", transcription)
+          setIsTranscribing(false)
+
+          if (!transcription || transcription.toLowerCase().startsWith("sorry")) {
+            setError("Could not understand audio. Please try again.")
+            setStatusMessage(null)
+            return
+          }
+          
+          // Now that we have transcription, capture frame and analyze
+          await handleAnalyzeVoice(transcription)
+
+        } catch (transcriptionError) {
+          console.error("Transcription error:", transcriptionError)
+          setError("Failed to transcribe audio.")
+          setStatusMessage(null)
+          setIsTranscribing(false)
+        }
+      }
+
+      mediaRecorderRef.current.start(500)
+      resetSilenceTimer()
+      console.log("Voice recording started.")
+
+    } catch (err) {
+      console.error("Error accessing microphone:", err)
+      alert("Could not access microphone. Please check permissions.")
+      setStatusMessage(null)
+      setIsVoiceRecording(false)
+    }
+  }
+
+  // --- Analysis Function (Voice Input) ---
+  const handleAnalyzeVoice = useCallback(async (transcribedQuery: string) => {
+    setStatusMessage("Capturing image...")
+    setIsAnalyzing(true)
+    setAiResponse(null)
+    setError(null)
+    const imageDataUrl = captureFrame()
+
+    if (!imageDataUrl) {
+      setIsAnalyzing(false)
+      setStatusMessage(null)
+      setError("Could not capture frame for analysis.")
+      return
+    }
+
+    setStatusMessage("Analyzing image with your query...")
+    console.log(`Frame captured, analyzing with query: "${transcribedQuery}"`) 
+
+    try {
+      const response = await getGroqVisionAnalysis(imageDataUrl, transcribedQuery)
+      setAiResponse(response)
+      setStatusMessage("Speaking response...") 
+      // Speak the response
+      speakText(
+         response,
+         () => { console.log("TTS started"); setIsSpeaking(true); setStatusMessage("Speaking..."); },
+         () => { console.log("TTS ended"); setIsSpeaking(false); setStatusMessage(null); setAiResponse(null); /* Auto-hide response */ },
+         (err) => { 
+             console.error("TTS Error:", err);
+             setError("Error speaking the response.");
+             setIsSpeaking(false);
+             setStatusMessage(null);
+         }
+       );
+
+    } catch (err) {
+      console.error("Error analyzing image with voice query:", err)
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during analysis."
+      setError(`Analysis failed: ${errorMessage}`)
+      setStatusMessage(null)
+    } finally {
+      setIsAnalyzing(false) 
+      // Don't set isSpeaking false here, TTS callback handles it
+    }
+  }, [captureFrame]) // Removed userQuery dependency
 
   return (
     <div className="flex flex-col h-screen bg-black text-white relative overflow-hidden">
@@ -173,6 +324,26 @@ export default function ARModePage() {
                 <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
             </div>
         )}
+        {/* Status Overlay */} 
+        <AnimatePresence>
+          {statusMessage && (
+            <motion.div
+              key="status-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-x-0 top-16 flex justify-center z-30"
+            >
+              <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm flex items-center space-x-2">
+                {isVoiceRecording && <Mic className="h-4 w-4 text-purple-400 animate-pulse" />} 
+                {isTranscribing && <Loader2 className="h-4 w-4 animate-spin" />} 
+                {isAnalyzing && !isSpeaking && <Loader2 className="h-4 w-4 animate-spin" />} 
+                {isSpeaking && <Volume2 className="h-4 w-4 text-green-400 animate-pulse" />}
+                <span>{statusMessage}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Hidden canvas for frame capture */}
         <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
       </div>
@@ -200,25 +371,45 @@ export default function ARModePage() {
       </AnimatePresence>
 
       {/* Controls */} 
-      <footer className="absolute bottom-0 left-0 right-0 flex items-center justify-center p-4 z-20 bg-gradient-to-t from-black/50 to-transparent">
-        <Button
-          size="lg"
-          onClick={handleAnalyze}
-          disabled={!stream || isAnalyzing || !!error}
-          className="rounded-full w-16 h-16 p-0 bg-white/80 hover:bg-white text-black disabled:bg-gray-500 disabled:opacity-50 transition-all duration-200 hover:scale-105 active:scale-95 relative shadow-lg"
-        >
-          {isAnalyzing ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
-          ) : (
-            <>
-              <Camera className="h-6 w-6" />
-              {/* Pulsing ring effect */}
-              <span className="absolute inset-0 rounded-full border-2 border-white/50 animate-pulse"></span>
-            </>
-          )}
-        </Button>
-        {/* Placeholder for voice input button */}
-        {/* <Button variant="ghost" size="icon" className="absolute right-8 bottom-6 text-white bg-white/10 hover:bg-white/20 rounded-full"><Mic className="h-5 w-5"/></Button> */}
+      <footer className="absolute bottom-0 left-0 right-0 flex items-center justify-center p-6 space-x-6 z-20 bg-gradient-to-t from-black/50 to-transparent">
+         {/* Camera Button */} 
+         <Button
+           size="lg"
+           onClick={handleAnalyzeImage}
+           disabled={!stream || isAnalyzing || isVoiceRecording || isTranscribing || isSpeaking || !!error}
+           className="group rounded-full w-16 h-16 p-0 bg-white/20 hover:bg-white/30 border border-white/30 text-white disabled:opacity-50 transition-all duration-200 relative shadow-lg hover:shadow-purple-500/30 hover:border-purple-400"
+           aria-label="Analyze Image"
+         >
+           {isAnalyzing && !isVoiceRecording && !isTranscribing && !isSpeaking ? (
+             <Loader2 className="h-6 w-6 animate-spin" />
+           ) : (
+             <>
+               <Camera className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
+               {/* Static Glow effect on hover potentially via group-hover:shadow-glow */}
+               <span className={`absolute inset-0 rounded-full border-2 ${!isAnalyzing && !isVoiceRecording ? 'border-white/50 group-hover:border-purple-400 animate-pulse' : 'border-transparent'}`}></span>
+             </>
+           )}
+         </Button>
+
+         {/* Voice Input Button */} 
+         <Button
+           size="lg"
+           onClick={startVoiceRecording}
+           disabled={!stream || isAnalyzing || isVoiceRecording || isTranscribing || isSpeaking || !!error}
+           className={`group rounded-full w-16 h-16 p-0 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/50 text-purple-300 hover:text-white disabled:opacity-50 transition-all duration-200 relative shadow-lg hover:shadow-purple-500/50 ${isVoiceRecording ? 'bg-red-600/50 border-red-500/70 animate-pulse' : 'hover:scale-105 active:scale-95'}`}
+           aria-label="Ask about view"
+         >
+           {isTranscribing ? (
+             <Loader2 className="h-6 w-6 animate-spin" />
+           ) : (
+             <Mic className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
+           )}
+           {/* Pulsing effect when idle and enabled */}
+           {!isAnalyzing && !isVoiceRecording && !isTranscribing && !isSpeaking && !error && stream && (
+               <span className="absolute inset-0 rounded-full border-2 border-purple-500/80 animate-pulse group-hover:border-white/50"></span>
+           )}
+         </Button>
+
       </footer>
     </div>
   )
