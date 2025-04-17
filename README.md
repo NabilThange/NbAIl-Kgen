@@ -5,11 +5,6 @@
 
 ---
 
-## 📌 Problem Statement
-Problem Statement 1 – Weave AI magic with Groq
-
----
-
 ## 🎯 Objective
 
 NbAIl is designed to be a futuristic multimodal AI assistant that helps users interact with technology more naturally — using **voice**, **text**, **vision**, and **AR**.
@@ -44,9 +39,6 @@ Our goal is to make AI more accessible, immersive, and helpful in real-world sce
 - **Productivity Insights**: Screenpipe
 - **Deployment**: Vercel
 
-### Sponsor Technologies Used:
-- ✅ **Groq** – Used for fast LLM generation, Whisper STT, PlayAI TTS, and multimodal input
-- ✅ **Screenpipe:Terminator** –  An Ai-First cross-platform UI automation library for rust, designed to interact with native gui applications
 ---
 
 ## ✨ Key Features
@@ -63,13 +55,6 @@ Our goal is to make AI more accessible, immersive, and helpful in real-world sce
 
 - **Demo Video**: [🔗 Paste your demo video link here]
 - **Pitch Deck**: [🔗 Paste Google Slides / PPT here]
-
----
-
-## ✅ Tasks & Bonus Checklist
-
-- ✅ Badge sharing completed
-- ✅ Sprint.dev signup done
 
 ---
 
@@ -90,7 +75,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ### Installation Steps:
 1. Clone the repository:
 ```bash
-git clone https://github.com/NabilThange/NbAIl-best-.git
+git clone https://github.com/NabilThange/NbAIl-Kgen-.git
 cd NbAIl-best-
 ```
 
