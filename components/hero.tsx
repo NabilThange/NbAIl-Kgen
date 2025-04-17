@@ -36,6 +36,20 @@ export default function Hero() {
 
   return (
     <div className="relative pt-36 pb-32 md:pt-52 md:pb-44">
+      {/* kGen Banner */}
+      <div className="absolute top-0 left-0 w-full flex justify-center">
+        <div className="w-full max-w-5xl">
+          <Image 
+            src="/kgen-banner.svg" 
+            alt="kGen - Initializing" 
+            width={1000} 
+            height={600} 
+            className="w-full h-auto"
+            priority
+          />
+        </div>
+      </div>
+
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-radial from-purple-500/10 to-transparent" />
 

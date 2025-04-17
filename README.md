@@ -1,4 +1,4 @@
-![github-submission-banner](https://github.com/user-attachments/assets/a1493b84-e4e2-456e-a791-ce35ee2bcf2f)
+![kgen-banner](./public/kgen-banner.svg)
 
 # 🚀 NbAIl – Your Multimodal AI Assistant
 > An intelligent, voice-first AI assistant with chat, vision, AR, and productivity control features.
