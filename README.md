@@ -79,7 +79,40 @@ Our goal is to make AI more accessible, immersive, and helpful in real-world sce
 - Node.js
 - Groq API Key
 - .env file containing:
-.............
+```
+NEXT_PUBLIC_GROQ_API_KEY=your_groq_api_key_here
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+### Installation Steps:
+1. Clone the repository:
+```bash
+git clone https://github.com/NabilThange/NbAIl-best-.git
+cd NbAIl-best-
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+pnpm install
+#or
+npm install --legacy-peer-deps
+```
+
+3. Create a `.env.local` file in the root directory with the required environment variables.
+
+4. Start the development server:
+```bash
+npm run dev
+# or
+pnpm dev
+```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
 ---
 
@@ -108,7 +141,7 @@ Our goal is to make AI more accessible, immersive, and helpful in real-world sce
 
 Building **NbAIl** has been a futuristic and immersive journey. We combined the power of **voice**, **vision**, and **augmented reality** to bring users closer to AI that can see, hear, and respond like a real assistant.
 
-This wasn’t just about answering questions — it was about creating a natural, beautiful, and sci-fi-like interaction model between humans and machines. From responsive UI to voice-based object scanning, NbAIl was built with user experience and innovation at its core.
+This wasn't just about answering questions — it was about creating a natural, beautiful, and sci-fi-like interaction model between humans and machines. From responsive UI to voice-based object scanning, NbAIl was built with user experience and innovation at its core.
 
 A huge thanks to the organizers, the mentors, and the incredible technologies like **Groq** and **Screenpipe** that made this possible. 🚀
 
